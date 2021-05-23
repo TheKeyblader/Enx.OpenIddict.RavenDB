@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <LangVersion>preview</LangVersion>
+    <AnalysisLevel>preview</AnalysisLevel>
+    <NoWarn>$(NoWarn);CS1591;NU5118;NU5128</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>portable</DebugType>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Authors>Jean-François Pustay</Authors>
+    <Company>$(Authors)</Company>
+    <Product>Enx.OpenIddict.RavenDB</Product>
+    <PackageProjectUrl>https://github.com/TheKeyblader/Enx.OpenIddict.RavenDB</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>ravendb;openiddict</PackageTags>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/TheKeyblader/Enx.OpenIddict.RavenDB.git</RepositoryUrl>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <IsPackable>true</IsPackable>
+    <IsShipping>true</IsShipping>
+    <Serviceable>false</Serviceable>
+  </PropertyGroup>
+</Project>
