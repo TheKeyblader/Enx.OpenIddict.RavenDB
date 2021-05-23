@@ -26,5 +26,5 @@ jobs:
     - name: Pack
       run: dotnet pack --no-build
     - name: Pusblish
-      run: dotnet nuget push "*.nupkg" --skip-duplicate
+      run: dotnet nuget push "*.nupkg" -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
 
