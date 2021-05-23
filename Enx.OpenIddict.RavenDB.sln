@@ -3,13 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31313.79
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Enx.OpenIddict.RavenDB", "Enx.OpenIddict.RavenDB\Enx.OpenIddict.RavenDB.csproj", "{86001F4B-F394-4F32-9EBA-7038359E27C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Enx.OpenIddict.RavenDB", "Enx.OpenIddict.RavenDB\Enx.OpenIddict.RavenDB.csproj", "{86001F4B-F394-4F32-9EBA-7038359E27C0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Enx.OpenIddict.RavenDB.Models", "Enx.OpenIddict.RavenDB.Models\Enx.OpenIddict.RavenDB.Models.csproj", "{4ABB9B08-8CE9-485F-92FA-332F1BE3CC71}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Enx.OpenIddict.RavenDB.Models", "Enx.OpenIddict.RavenDB.Models\Enx.OpenIddict.RavenDB.Models.csproj", "{4ABB9B08-8CE9-485F-92FA-332F1BE3CC71}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BA13E504-2DFD-4C97-8ECD-7D247DA696A7}"
 	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		CHANGELOG.md = CHANGELOG.md
 		Directory.Build.props = Directory.Build.props
+		LICENSE = LICENSE
+		README.md = README.md
 	EndProjectSection
 EndProject
 Global
