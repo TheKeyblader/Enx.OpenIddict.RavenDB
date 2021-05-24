@@ -47,6 +47,12 @@ namespace Enx.OpenIddict.RavenDB
         {
             await Session.StoreAsync(token, cancellationToken);
             Session.Advanced.GetMetadataFor(token)[Constants.Documents.Metadata.Expires] = token.ExpirationDate;
+            if (token.AuthorizationId != null)
+            {
+                var id = token.Id!;
+                Session.Advanced.Patch<OpenIddictRavenDBAuthorization, string>(token.AuthorizationId, a => a.Tokens,
+                    array => array.Add(id));
+            }
             await Session.SaveChangesAsync(cancellationToken);
         }
 
@@ -232,7 +238,7 @@ namespace Enx.OpenIddict.RavenDB
             var store = Session.Advanced.DocumentStore;
             var operation = await store
                 .Operations
-                .SendAsync(new DeleteByQueryOperation<TokenIndex.Result, AuthorizationIndex>(
+                .SendAsync(new DeleteByQueryOperation<TokenIndex.Result, TokenIndex>(
                     x => x.CreationDate < threshold.UtcDateTime && (
                     (x.Status != Statuses.Inactive && x.Status != Statuses.Valid) ||
                     (x.AuthorizationStatus != Statuses.Valid))),
@@ -249,19 +255,7 @@ namespace Enx.OpenIddict.RavenDB
 
         public virtual ValueTask SetAuthorizationIdAsync(TToken token, string? identifier, CancellationToken cancellationToken)
         {
-            if (token.AuthorizationId != null)
-            {
-                Session.Advanced.Patch<OpenIddictRavenDBAuthorization, string>(token.AuthorizationId, a => a.Tokens,
-                    array => array.RemoveAll(id => id == token.AuthorizationId));
-            }
             token.AuthorizationId = identifier;
-
-            if (token.AuthorizationId != null)
-            {
-                Session.Advanced.Patch<OpenIddictRavenDBAuthorization, string>(token.AuthorizationId, a => a.Tokens,
-                    array => array.Add(token.AuthorizationId));
-            }
-
             return default;
         }
 
