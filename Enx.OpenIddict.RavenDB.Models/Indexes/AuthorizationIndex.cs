@@ -1,5 +1,8 @@
 ﻿using Enx.OpenIddict.RavenDB.Models;
+
 using Raven.Client.Documents.Indexes;
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -12,6 +15,8 @@ namespace Enx.OpenIddict.RavenDB.Indexes
         {
             public string? ApplicationId { get; set; }
 
+            public DateTime? CreationDate { get; set; }
+
             public string? Subject { get; set; }
 
             public string? Status { get; set; }
@@ -20,6 +25,9 @@ namespace Enx.OpenIddict.RavenDB.Indexes
 
             public virtual IReadOnlyList<string> Scopes { get; set; }
                 = ImmutableList.Create<string>();
+
+            public virtual IEnumerable<bool> ValidTokens { get; set; }
+                = new List<bool>();
         }
 
         public AuthorizationIndex()
@@ -28,10 +36,13 @@ namespace Enx.OpenIddict.RavenDB.Indexes
                                     select new Result
                                     {
                                         ApplicationId = authorization.ApplicationId,
+                                        CreationDate = authorization.CreationDate,
                                         Subject = authorization.Subject,
                                         Status = authorization.Status,
                                         Type = authorization.Type,
-                                        Scopes = authorization.Scopes
+                                        Scopes = authorization.Scopes,
+                                        ValidTokens = LoadDocument<OpenIddictRavenDBToken>(authorization.Tokens)
+                                            .Select(t => t != null)
                                     };
         }
     }

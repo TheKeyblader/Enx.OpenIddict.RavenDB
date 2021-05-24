@@ -46,9 +46,11 @@ namespace Enx.OpenIddict.RavenDB
             await Session.SaveChangesAsync(cancellationToken);
         }
 
-        public ValueTask DeleteAsync(TApplication application, CancellationToken cancellationToken)
+        public virtual async ValueTask DeleteAsync(TApplication application, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var changeVector = Session.Advanced.GetChangeVectorFor(application);
+            Session.Delete(application.Id, changeVector);
+            await Session.SaveChangesAsync(cancellationToken);
         }
 
         public virtual async ValueTask<TApplication?> FindByClientIdAsync(string identifier, CancellationToken cancellationToken)

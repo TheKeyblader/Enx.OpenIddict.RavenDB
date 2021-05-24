@@ -14,7 +14,10 @@ using OpenIddict.Abstractions;
 using Raven.Client;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
+using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Session;
+
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 using SR = OpenIddict.Abstractions.OpenIddictResources;
 
@@ -47,9 +50,11 @@ namespace Enx.OpenIddict.RavenDB
             await Session.SaveChangesAsync(cancellationToken);
         }
 
-        public virtual ValueTask DeleteAsync(TToken token, CancellationToken cancellationToken)
+        public virtual async ValueTask DeleteAsync(TToken token, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var changeVector = Session.Advanced.GetChangeVectorFor(token);
+            Session.Delete(token.Id, changeVector);
+            await Session.SaveChangesAsync(cancellationToken);
         }
 
         public virtual IAsyncEnumerable<TToken> FindAsync(string subject, string client, CancellationToken cancellationToken)
@@ -222,9 +227,18 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable((IRavenQueryable<TResult>)query(Session.Query<TToken>(), state), cancellationToken);
         }
 
-        public virtual ValueTask PruneAsync(DateTimeOffset threshold, CancellationToken cancellationToken)
+        public virtual async ValueTask PruneAsync(DateTimeOffset threshold, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var store = Session.Advanced.DocumentStore;
+            var operation = await store
+                .Operations
+                .SendAsync(new DeleteByQueryOperation<TokenIndex.Result, AuthorizationIndex>(
+                    x => x.CreationDate < threshold.UtcDateTime && (
+                    (x.Status != Statuses.Inactive && x.Status != Statuses.Valid) ||
+                    (x.AuthorizationStatus != Statuses.Valid))),
+                    null, cancellationToken);
+
+            await operation.WaitForCompletionAsync();
         }
 
         public virtual ValueTask SetApplicationIdAsync(TToken token, string? identifier, CancellationToken cancellationToken)
@@ -235,7 +249,19 @@ namespace Enx.OpenIddict.RavenDB
 
         public virtual ValueTask SetAuthorizationIdAsync(TToken token, string? identifier, CancellationToken cancellationToken)
         {
+            if (token.AuthorizationId != null)
+            {
+                Session.Advanced.Patch<OpenIddictRavenDBAuthorization, string>(token.AuthorizationId, a => a.Tokens,
+                    array => array.RemoveAll(id => id == token.AuthorizationId));
+            }
             token.AuthorizationId = identifier;
+
+            if (token.AuthorizationId != null)
+            {
+                Session.Advanced.Patch<OpenIddictRavenDBAuthorization, string>(token.AuthorizationId, a => a.Tokens,
+                    array => array.Add(token.AuthorizationId));
+            }
+
             return default;
         }
 

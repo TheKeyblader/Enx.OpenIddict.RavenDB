@@ -13,7 +13,10 @@ using OpenIddict.Abstractions;
 
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
+using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Session;
+
+using static OpenIddict.Abstractions.OpenIddictConstants;
 
 using SR = OpenIddict.Abstractions.OpenIddictResources;
 
@@ -46,9 +49,11 @@ namespace Enx.OpenIddict.RavenDB
             await Session.SaveChangesAsync(cancellationToken);
         }
 
-        public virtual ValueTask DeleteAsync(TAuthorization authorization, CancellationToken cancellationToken)
+        public virtual async ValueTask DeleteAsync(TAuthorization authorization, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var changeVector = Session.Advanced.GetChangeVectorFor(authorization);
+            Session.Delete(authorization.Id, changeVector);
+            await Session.SaveChangesAsync(cancellationToken);
         }
 
         public virtual IAsyncEnumerable<TAuthorization> FindAsync(string subject, string client, CancellationToken cancellationToken)
@@ -203,9 +208,16 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable((IRavenQueryable<TResult>)query(Session.Query<TAuthorization>(), state), cancellationToken);
         }
 
-        public virtual ValueTask PruneAsync(DateTimeOffset threshold, CancellationToken cancellationToken)
+        public virtual async ValueTask PruneAsync(DateTimeOffset threshold, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var store = Session.Advanced.DocumentStore;
+            var operation = await store
+                .Operations
+                .SendAsync(new DeleteByQueryOperation<AuthorizationIndex.Result, AuthorizationIndex>(
+                    x => x.CreationDate < threshold.UtcDateTime && (x.Status != Statuses.Valid || (x.Type == AuthorizationTypes.AdHoc && x.ValidTokens.Contains(true)))),
+                    null, cancellationToken);
+
+            await operation.WaitForCompletionAsync();
         }
 
         public virtual ValueTask SetApplicationIdAsync(TAuthorization authorization, string? identifier, CancellationToken cancellationToken)

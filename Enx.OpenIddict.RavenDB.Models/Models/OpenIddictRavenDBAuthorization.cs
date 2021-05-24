@@ -18,8 +18,8 @@ namespace Enx.OpenIddict.RavenDB.Models
         public virtual IReadOnlyList<string> Scopes { get; set; }
             = ImmutableList.Create<string>();
 
-        public virtual IDictionary<string, OpenIddictRavenDBToken> Tokens { get; set; }
-            = new Dictionary<string, OpenIddictRavenDBToken>();
+        public virtual List<string> Tokens { get; set; }
+            = new List<string>();
 
         public virtual string? Status { get; set; }
 
