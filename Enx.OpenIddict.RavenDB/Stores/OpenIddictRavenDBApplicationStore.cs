@@ -17,6 +17,7 @@ using Enx.OpenIddict.RavenDB.Indexes;
 using Enx.OpenIddict.RavenDB.Models;
 
 using SR = OpenIddict.Abstractions.OpenIddictResources;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Enx.OpenIddict.RavenDB
 {
@@ -77,7 +78,12 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable(query, cancellationToken);
         }
 
-        public virtual async ValueTask<TResult> GetAsync<TState, TResult>(Func<IQueryable<TApplication>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
+        public ValueTask<string?> GetApplicationTypeAsync(TApplication application, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public virtual async ValueTask<TResult?> GetAsync<TState, TResult>(Func<IQueryable<TApplication>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
         {
             return await query(Session.Query<TApplication>(), state).FirstOrDefaultAsync(cancellationToken);
         }
@@ -120,6 +126,11 @@ namespace Enx.OpenIddict.RavenDB
         public virtual ValueTask<string?> GetIdAsync(TApplication application, CancellationToken cancellationToken)
         {
             return new ValueTask<string?>(application.Id);
+        }
+
+        public ValueTask<JsonWebKeySet?> GetJsonWebKeySetAsync(TApplication application, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public virtual ValueTask<ImmutableArray<string>> GetPermissionsAsync(TApplication application, CancellationToken cancellationToken)
@@ -178,6 +189,11 @@ namespace Enx.OpenIddict.RavenDB
             return new ValueTask<ImmutableArray<string>>(application.Requirements.ToImmutableArray());
         }
 
+        public ValueTask<ImmutableDictionary<string, string>> GetSettingsAsync(TApplication application, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public virtual ValueTask<TApplication> InstantiateAsync(CancellationToken cancellationToken)
         {
             try
@@ -214,6 +230,11 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable((IRavenQueryable<TResult>)query(Session.Query<TApplication>(), state), cancellationToken);
         }
 
+        public ValueTask SetApplicationTypeAsync(TApplication application, string? type, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public virtual ValueTask SetClientIdAsync(TApplication application, string? identifier, CancellationToken cancellationToken)
         {
             application.ClientId = identifier;
@@ -248,6 +269,11 @@ namespace Enx.OpenIddict.RavenDB
         {
             application.DisplayNames = names;
             return default;
+        }
+
+        public ValueTask SetJsonWebKeySetAsync(TApplication application, JsonWebKeySet? set, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public virtual ValueTask SetPermissionsAsync(TApplication application, ImmutableArray<string> permissions, CancellationToken cancellationToken)
@@ -319,6 +345,11 @@ namespace Enx.OpenIddict.RavenDB
 
             application.Requirements = requirements.ToImmutableList();
             return default;
+        }
+
+        public ValueTask SetSettingsAsync(TApplication application, ImmutableDictionary<string, string> settings, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         public virtual async ValueTask UpdateAsync(TApplication application, CancellationToken cancellationToken)
