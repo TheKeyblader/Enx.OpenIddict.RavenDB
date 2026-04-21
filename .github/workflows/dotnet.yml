@@ -16,15 +16,11 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 10.x
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
       run: dotnet build -c Release --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
-    - name: Pack
-      run: dotnet pack -c Release -o nupkgs  --no-build
-    - name: Pusblish
-      run: dotnet nuget push "**/*.nupkg" -k ${{secrets.NUGET_API_KEY}} -s https://api.nuget.org/v3/index.json --skip-duplicate
 
