@@ -20,15 +20,10 @@ using SR = OpenIddict.Abstractions.OpenIddictResources;
 
 namespace Enx.OpenIddict.RavenDB
 {
-    public class OpenIddictRavenDBScopeStore<TScope> : IOpenIddictScopeStore<TScope>
+    public class OpenIddictRavenDBScopeStore<TScope>(IAsyncDocumentSession session) : IOpenIddictScopeStore<TScope>
         where TScope : OpenIddictRavenDBScope
     {
-        public OpenIddictRavenDBScopeStore(IAsyncDocumentSession session)
-        {
-            Session = session;
-        }
-
-        protected IAsyncDocumentSession Session { get; }
+        protected IAsyncDocumentSession Session { get; } = session;
 
         public virtual async ValueTask<long> CountAsync(CancellationToken cancellationToken)
         {
@@ -80,7 +75,7 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable(query, cancellationToken);
         }
 
-        public virtual async ValueTask<TResult> GetAsync<TState, TResult>( Func<IQueryable<TScope>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
+        public virtual async ValueTask<TResult?> GetAsync<TState, TResult>( Func<IQueryable<TScope>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
         {
             return await query(Session.Query<TScope>(), state).FirstOrDefaultAsync(cancellationToken);
         }
@@ -145,10 +140,10 @@ namespace Enx.OpenIddict.RavenDB
         {
             if (scope.Resources is null || scope.Resources.Count == 0)
             {
-                return new ValueTask<ImmutableArray<string>>(ImmutableArray.Create<string>());
+                return new ValueTask<ImmutableArray<string>>([]);
             }
 
-            return new ValueTask<ImmutableArray<string>>(scope.Resources.ToImmutableArray());
+            return new ValueTask<ImmutableArray<string>>([.. scope.Resources]);
         }
 
         public virtual ValueTask<TScope> InstantiateAsync(CancellationToken cancellationToken)

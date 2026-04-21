@@ -1,37 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
-
-using Enx.OpenIddict.RavenDB.Indexes;
+﻿using Enx.OpenIddict.RavenDB.Indexes;
 using Enx.OpenIddict.RavenDB.Models;
-
 using OpenIddict.Abstractions;
-
 using Raven.Client;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Linq;
 using Raven.Client.Documents.Operations;
 using Raven.Client.Documents.Session;
-
+using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Net;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using static OpenIddict.Abstractions.OpenIddictConstants;
-
 using SR = OpenIddict.Abstractions.OpenIddictResources;
 
 namespace Enx.OpenIddict.RavenDB
 {
-    public class OpenIddictRavenDBTokenStore<TToken> : IOpenIddictTokenStore<TToken>
+    public class OpenIddictRavenDBTokenStore<TToken>(IAsyncDocumentSession session) : IOpenIddictTokenStore<TToken>
         where TToken : OpenIddictRavenDBToken
     {
-        public OpenIddictRavenDBTokenStore(IAsyncDocumentSession session)
-        {
-            Session = session;
-        }
-
-        protected IAsyncDocumentSession Session { get; }
+        protected IAsyncDocumentSession Session { get; } = session;
 
         public virtual async ValueTask<long> CountAsync(CancellationToken cancellationToken)
         {
@@ -63,24 +54,7 @@ namespace Enx.OpenIddict.RavenDB
             await Session.SaveChangesAsync(cancellationToken);
         }
 
-        public virtual IAsyncEnumerable<TToken> FindAsync(string subject, string client, CancellationToken cancellationToken)
-        {
-            var query = Session.Query<TToken, TokenIndex>().Where(a =>
-                a.Subject == subject &&
-                a.ApplicationId == client);
-            return Session.ToAsyncEnumerable(query, cancellationToken);
-        }
-
-        public virtual IAsyncEnumerable<TToken> FindAsync(string subject, string client, string status, CancellationToken cancellationToken)
-        {
-            var query = Session.Query<TToken, TokenIndex>().Where(a =>
-                a.Subject == subject &&
-                a.ApplicationId == client &&
-                a.Status == status);
-            return Session.ToAsyncEnumerable(query, cancellationToken);
-        }
-
-        public virtual IAsyncEnumerable<TToken> FindAsync(string subject, string client, string status, string type, CancellationToken cancellationToken)
+        public virtual IAsyncEnumerable<TToken> FindAsync(string? subject, string? client, string? status, string? type, CancellationToken cancellationToken)
         {
             var query = Session.Query<TToken, TokenIndex>().Where(a =>
                 a.Subject == subject &&
@@ -126,7 +100,7 @@ namespace Enx.OpenIddict.RavenDB
             return new ValueTask<string?>(token.ApplicationId);
         }
 
-        public virtual async ValueTask<TResult> GetAsync<TState, TResult>(Func<IQueryable<TToken>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
+        public virtual async ValueTask<TResult?> GetAsync<TState, TResult>(Func<IQueryable<TToken>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
         {
             return await query(Session.Query<TToken>(), state).FirstOrDefaultAsync(cancellationToken);
         }
@@ -233,7 +207,7 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable((IRavenQueryable<TResult>)query(Session.Query<TToken>(), state), cancellationToken);
         }
 
-        public virtual async ValueTask PruneAsync(DateTimeOffset threshold, CancellationToken cancellationToken)
+        public virtual async ValueTask<long> PruneAsync(DateTimeOffset threshold, CancellationToken cancellationToken)
         {
             var store = Session.Advanced.DocumentStore;
             var operation = await store
@@ -244,7 +218,67 @@ namespace Enx.OpenIddict.RavenDB
                     (x.AuthorizationStatus != Statuses.Valid))),
                     null, cancellationToken);
 
-            await operation.WaitForCompletionAsync();
+            var result = await operation.WaitForCompletionAsync<BulkOperationResult>();
+            return result.Total;
+        }
+
+        public async ValueTask<long> RevokeAsync(string? subject, string? client, string? status, string? type, CancellationToken cancellationToken)
+        {
+            var query = Session.Query<TToken>();
+
+            if (!string.IsNullOrEmpty(subject))
+                query = query.Where(a => a.Subject == subject);
+
+            if (!string.IsNullOrEmpty(client))
+                query = query.Where(a => a.ApplicationId == client);
+
+            if (!string.IsNullOrEmpty(status))
+                query = query.Where(a => a.Status == status);
+
+            if (!string.IsNullOrEmpty(type))
+                query = query.Where(a => a.Type == type);
+
+            var authorizations = await query.ToArrayAsync(cancellationToken);
+            foreach (var auth in authorizations)
+                auth.Status = Statuses.Revoked;
+            await Session.SaveChangesAsync(cancellationToken);
+            return authorizations.Length;
+        }
+
+        public async ValueTask<long> RevokeByApplicationIdAsync(string identifier, CancellationToken cancellationToken = default)
+        {
+            var query = Session.Query<TToken>()
+                .Where(x => x.ApplicationId == identifier);
+
+            var authorizations = await query.ToArrayAsync(cancellationToken);
+            foreach (var auth in authorizations)
+                auth.Status = Statuses.Revoked;
+            await Session.SaveChangesAsync(cancellationToken);
+            return authorizations.Length;
+        }
+
+        public async ValueTask<long> RevokeByAuthorizationIdAsync(string identifier, CancellationToken cancellationToken)
+        {
+            var query = Session.Query<TToken>()
+                .Where(x => x.AuthorizationId == identifier);
+
+            var authorizations = await query.ToArrayAsync(cancellationToken);
+            foreach (var auth in authorizations)
+                auth.Status = Statuses.Revoked;
+            await Session.SaveChangesAsync(cancellationToken);
+            return authorizations.Length;
+        }
+
+        public async ValueTask<long> RevokeBySubjectAsync(string subject, CancellationToken cancellationToken = default)
+        {
+            var query = Session.Query<TToken>()
+                .Where(x => x.Subject == subject);
+
+            var authorizations = await query.ToArrayAsync(cancellationToken);
+            foreach (var auth in authorizations)
+                auth.Status = Statuses.Revoked;
+            await Session.SaveChangesAsync(cancellationToken);
+            return authorizations.Length;
         }
 
         public virtual ValueTask SetApplicationIdAsync(TToken token, string? identifier, CancellationToken cancellationToken)

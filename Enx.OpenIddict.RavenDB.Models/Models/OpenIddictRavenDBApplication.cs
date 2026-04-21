@@ -6,6 +6,8 @@ namespace Enx.OpenIddict.RavenDB.Models
 {
     public class OpenIddictRavenDBApplication
     {
+        public virtual string? ApplicationType { get; set; }
+
         public virtual string? ClientId { get; set; }
 
         public virtual string? ClientSecret { get; set; }
@@ -19,21 +21,24 @@ namespace Enx.OpenIddict.RavenDB.Models
 
         public virtual string? Id { get; set; }
 
-        public virtual IReadOnlyList<string> Permissions { get; set; } 
-            = ImmutableList.Create<string>();
+        public virtual string? JsonWebKeySet { get; set; }
 
-        public virtual IReadOnlyList<string> PostLogoutRedirectUris { get; set; }
-            = ImmutableList.Create<string>();
+        public virtual IReadOnlyList<string> Permissions { get; set; } = [];
+
+        public virtual IReadOnlyList<string> PostLogoutRedirectUris { get; set; } = [];
 
         public virtual IDictionary<string, object> Properties { get; set; }
             = new Dictionary<string, object>();
 
-        public virtual IReadOnlyList<string> RedirectUris { get; set; }
-            = ImmutableList.Create<string>();
+        public virtual IReadOnlyList<string> RedirectUris { get; set; } = [];
 
-        public virtual IReadOnlyList<string> Requirements { get; set; }
-            = ImmutableList.Create<string>();
+        public virtual IReadOnlyList<string> Requirements { get; set; } = [];
+
+        public virtual IReadOnlyDictionary<string, string> Settings { get; set; }
+            = ImmutableDictionary.Create<string, string>();
 
         public virtual string? Type { get; set; }
+
+
     }
 }

@@ -21,15 +21,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Enx.OpenIddict.RavenDB
 {
-    public class OpenIddictRavenDBApplicationStore<TApplication> : IOpenIddictApplicationStore<TApplication>
+    public class OpenIddictRavenDBApplicationStore<TApplication>(IAsyncDocumentSession session) : IOpenIddictApplicationStore<TApplication>
         where TApplication : OpenIddictRavenDBApplication
     {
-        public OpenIddictRavenDBApplicationStore(IAsyncDocumentSession session)
-        {
-            Session = session;
-        }
-
-        protected IAsyncDocumentSession Session { get; }
+        protected IAsyncDocumentSession Session { get; } = session;
 
         public virtual async ValueTask<long> CountAsync(CancellationToken cancellationToken)
         {
@@ -80,7 +75,7 @@ namespace Enx.OpenIddict.RavenDB
 
         public ValueTask<string?> GetApplicationTypeAsync(TApplication application, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            return new(application.ApplicationType);
         }
 
         public virtual async ValueTask<TResult?> GetAsync<TState, TResult>(Func<IQueryable<TApplication>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
@@ -130,27 +125,30 @@ namespace Enx.OpenIddict.RavenDB
 
         public ValueTask<JsonWebKeySet?> GetJsonWebKeySetAsync(TApplication application, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (application.JsonWebKeySet is null)
+                return new(result: null);
+
+            return new(JsonWebKeySet.Create(application.JsonWebKeySet));
         }
 
         public virtual ValueTask<ImmutableArray<string>> GetPermissionsAsync(TApplication application, CancellationToken cancellationToken)
         {
             if (application.Permissions is null || application.Permissions.Count == 0)
             {
-                return new ValueTask<ImmutableArray<string>>(ImmutableArray.Create<string>());
+                return new ValueTask<ImmutableArray<string>>([]);
             }
 
-            return new ValueTask<ImmutableArray<string>>(application.Permissions.ToImmutableArray());
+            return new ValueTask<ImmutableArray<string>>([.. application.Permissions]);
         }
 
         public virtual ValueTask<ImmutableArray<string>> GetPostLogoutRedirectUrisAsync(TApplication application, CancellationToken cancellationToken)
         {
             if (application.PostLogoutRedirectUris is null || application.PostLogoutRedirectUris.Count == 0)
             {
-                return new ValueTask<ImmutableArray<string>>(ImmutableArray.Create<string>());
+                return new ValueTask<ImmutableArray<string>>([]);
             }
 
-            return new ValueTask<ImmutableArray<string>>(application.PostLogoutRedirectUris.ToImmutableArray());
+            return new ValueTask<ImmutableArray<string>>([.. application.PostLogoutRedirectUris]);
         }
 
         public virtual ValueTask<ImmutableDictionary<string, JsonElement>> GetPropertiesAsync(TApplication application, CancellationToken cancellationToken)
@@ -173,25 +171,27 @@ namespace Enx.OpenIddict.RavenDB
         {
             if (application.RedirectUris is null || application.RedirectUris.Count == 0)
             {
-                return new ValueTask<ImmutableArray<string>>(ImmutableArray.Create<string>());
+                return new ValueTask<ImmutableArray<string>>([]);
             }
 
-            return new ValueTask<ImmutableArray<string>>(application.RedirectUris.ToImmutableArray());
+            return new ValueTask<ImmutableArray<string>>([.. application.RedirectUris]);
         }
 
         public virtual ValueTask<ImmutableArray<string>> GetRequirementsAsync(TApplication application, CancellationToken cancellationToken)
         {
             if (application.Requirements is null || application.Requirements.Count == 0)
             {
-                return new ValueTask<ImmutableArray<string>>(ImmutableArray.Create<string>());
+                return new ValueTask<ImmutableArray<string>>([]);
             }
 
-            return new ValueTask<ImmutableArray<string>>(application.Requirements.ToImmutableArray());
+            return new ValueTask<ImmutableArray<string>>([.. application.Requirements]);
         }
 
         public ValueTask<ImmutableDictionary<string, string>> GetSettingsAsync(TApplication application, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            if (application.Settings.Count == 0)
+                return new(result: []);
+            return new(application.Settings.ToImmutableDictionary());
         }
 
         public virtual ValueTask<TApplication> InstantiateAsync(CancellationToken cancellationToken)
@@ -232,7 +232,8 @@ namespace Enx.OpenIddict.RavenDB
 
         public ValueTask SetApplicationTypeAsync(TApplication application, string? type, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            application.ApplicationType = type;
+            return default;
         }
 
         public virtual ValueTask SetClientIdAsync(TApplication application, string? identifier, CancellationToken cancellationToken)
@@ -273,19 +274,20 @@ namespace Enx.OpenIddict.RavenDB
 
         public ValueTask SetJsonWebKeySetAsync(TApplication application, JsonWebKeySet? set, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            application.JsonWebKeySet = set is not null ? JsonSerializer.Serialize(set, OpenIddictSerializer.Default.JsonWebKeySet) : null;
+            return default;
         }
 
         public virtual ValueTask SetPermissionsAsync(TApplication application, ImmutableArray<string> permissions, CancellationToken cancellationToken)
         {
             if (permissions.IsDefaultOrEmpty)
             {
-                application.Permissions = ImmutableList.Create<string>();
+                application.Permissions = [];
 
                 return default;
             }
 
-            application.Permissions = permissions.ToImmutableList();
+            application.Permissions = [.. permissions];
             return default;
         }
 
@@ -293,11 +295,11 @@ namespace Enx.OpenIddict.RavenDB
         {
             if (addresses.IsDefaultOrEmpty)
             {
-                application.PostLogoutRedirectUris = ImmutableList.Create<string>();
+                application.PostLogoutRedirectUris = [];
                 return default;
             }
 
-            application.PostLogoutRedirectUris = addresses.ToImmutableList();
+            application.PostLogoutRedirectUris = [.. addresses];
             return default;
         }
 
@@ -325,12 +327,12 @@ namespace Enx.OpenIddict.RavenDB
         {
             if (addresses.IsDefaultOrEmpty)
             {
-                application.RedirectUris = ImmutableList.Create<string>();
+                application.RedirectUris = [];
 
                 return default;
             }
 
-            application.RedirectUris = addresses.ToImmutableList();
+            application.RedirectUris = [.. addresses];
             return default;
         }
 
@@ -338,18 +340,19 @@ namespace Enx.OpenIddict.RavenDB
         {
             if (requirements.IsDefaultOrEmpty)
             {
-                application.Requirements = ImmutableList.Create<string>();
+                application.Requirements = [];
 
                 return default;
             }
 
-            application.Requirements = requirements.ToImmutableList();
+            application.Requirements = [.. requirements];
             return default;
         }
 
         public ValueTask SetSettingsAsync(TApplication application, ImmutableDictionary<string, string> settings, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            application.Settings = settings;
+            return default;
         }
 
         public virtual async ValueTask UpdateAsync(TApplication application, CancellationToken cancellationToken)
