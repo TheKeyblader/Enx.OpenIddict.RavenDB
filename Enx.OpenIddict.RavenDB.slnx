@@ -6,6 +6,11 @@
     <File Path="LICENSE" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="Enx.OpenIddict.RavenDB.Models/Enx.OpenIddict.RavenDB.Models.csproj" />
-  <Project Path="Enx.OpenIddict.RavenDB/Enx.OpenIddict.RavenDB.csproj" />
+  <Folder Name="/Sources/">
+    <Project Path="Sources/Enx.OpenIddict.RavenDB.Models/Enx.OpenIddict.RavenDB.Models.csproj" />
+    <Project Path="Sources/Enx.OpenIddict.RavenDB/Enx.OpenIddict.RavenDB.csproj" />
+  </Folder>
+  <Properties Name="ExtensibilityGlobals" Scope="PostLoad">
+    <Property Name="FileExplorer" />
+  </Properties>
 </Solution>
