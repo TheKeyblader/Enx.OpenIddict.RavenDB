@@ -25,8 +25,13 @@
     <PackageTags>ravendb;openiddict</PackageTags>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/TheKeyblader/Enx.OpenIddict.RavenDB.git</RepositoryUrl>
-    <Version>0.1.2</Version>
+    <Version>0.2.0</Version>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+  
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
   
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
