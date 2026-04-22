@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,17 +30,23 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual async ValueTask<long> CountAsync<TResult>(Func<IQueryable<TAuthorization>, IQueryable<TResult>> query, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(query);
+
         return await query(Session.Query<TAuthorization>()).CountAsync(cancellationToken);
     }
 
     public virtual async ValueTask CreateAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         await Session.StoreAsync(authorization, cancellationToken);
         await Session.SaveChangesAsync(cancellationToken);
     }
 
     public virtual async ValueTask DeleteAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         var changeVector = Session.Advanced.GetChangeVectorFor(authorization);
         Session.Delete(authorization.Id, changeVector);
         await Session.SaveChangesAsync(cancellationToken);
@@ -49,14 +56,17 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
     {
         var query = Session.Query<TAuthorization, AuthorizationIndex>();
 
-        if (!string.IsNullOrWhiteSpace(subject))
+        if (!string.IsNullOrEmpty(subject))
             query = query.Where(a => a.Subject == subject);
 
-        if (!string.IsNullOrWhiteSpace(client))
+        if (!string.IsNullOrEmpty(client))
             query = query.Where(a => a.ApplicationId == client);
 
-        if (!string.IsNullOrWhiteSpace(type))
+        if (!string.IsNullOrEmpty(type))
             query = query.Where(a => a.Type == type);
+
+        if (!string.IsNullOrEmpty(status))
+            query = query.Where(a => a.Status == status);
 
         if (scopes.HasValue)
             query = query.Where(a => a.Scopes.In(scopes.Value));
@@ -66,46 +76,62 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual IAsyncEnumerable<TAuthorization> FindByApplicationIdAsync(string identifier, CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
+
         return Session.ToAsyncEnumerable(Session.Query<TAuthorization, AuthorizationIndex>().Where(a => a.ApplicationId == identifier), cancellationToken);
     }
 
     public virtual async ValueTask<TAuthorization?> FindByIdAsync(string identifier, CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
+
         return await Session.LoadAsync<TAuthorization>(identifier, cancellationToken);
     }
 
     public virtual IAsyncEnumerable<TAuthorization> FindBySubjectAsync(string subject, CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrEmpty(subject);
+
         return Session.ToAsyncEnumerable(Session.Query<TAuthorization, AuthorizationIndex>().Where(a => a.Subject == subject), cancellationToken);
     }
 
     public virtual ValueTask<string?> GetApplicationIdAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         return new ValueTask<string?>(authorization.ApplicationId);
     }
 
     public virtual async ValueTask<TResult?> GetAsync<TState, TResult>(Func<IQueryable<TAuthorization>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(query);
+
         return await query(Session.Query<TAuthorization>(), state).FirstOrDefaultAsync(cancellationToken);
     }
 
     public virtual ValueTask<DateTimeOffset?> GetCreationDateAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         if (authorization.CreationDate is null)
         {
-            return new ValueTask<DateTimeOffset?>(result: null);
+            return new(result: null);
         }
 
-        return new ValueTask<DateTimeOffset?>(DateTime.SpecifyKind(authorization.CreationDate.Value, DateTimeKind.Utc));
+        return new(DateTime.SpecifyKind(authorization.CreationDate.Value, DateTimeKind.Utc));
     }
 
     public virtual ValueTask<string?> GetIdAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         return new ValueTask<string?>(authorization.Id);
     }
 
     public virtual ValueTask<ImmutableDictionary<string, JsonElement>> GetPropertiesAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         if (authorization.Properties is null)
         {
             return new ValueTask<ImmutableDictionary<string, JsonElement>>(ImmutableDictionary.Create<string, JsonElement>());
@@ -122,6 +148,8 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual ValueTask<ImmutableArray<string>> GetScopesAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         if (authorization.Scopes is null || authorization.Scopes.Count == 0)
         {
             return new ValueTask<ImmutableArray<string>>([]);
@@ -132,16 +160,22 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual ValueTask<string?> GetStatusAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         return new ValueTask<string?>(authorization.Status);
     }
 
     public virtual ValueTask<string?> GetSubjectAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         return new ValueTask<string?>(authorization.Subject);
     }
 
     public virtual ValueTask<string?> GetTypeAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         return new ValueTask<string?>(authorization.Type);
     }
 
@@ -161,7 +195,8 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual IAsyncEnumerable<TAuthorization> ListAsync(int? count, int? offset, CancellationToken cancellationToken)
     {
-        var query = Session.Query<TAuthorization>();
+        var query = Session.Query<TAuthorization>()
+            .OrderBy(a => a.Id);
 
         if (offset.HasValue)
         {
@@ -178,6 +213,8 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual IAsyncEnumerable<TResult> ListAsync<TState, TResult>(Func<IQueryable<TAuthorization>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(query);
+
         return Session.ToAsyncEnumerable((IRavenQueryable<TResult>)query(Session.Query<TAuthorization>(), state), cancellationToken);
     }
 
@@ -219,6 +256,9 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public async ValueTask<long> RevokeByApplicationIdAsync(string identifier, CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrEmpty(identifier);
+
+
         var query = Session.Query<TAuthorization>()
             .Where(x => x.ApplicationId == identifier);
 
@@ -231,6 +271,9 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public async ValueTask<long> RevokeBySubjectAsync(string subject, CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrEmpty(subject);
+
+
         var query = Session.Query<TAuthorization>()
             .Where(x => x.Subject == subject);
 
@@ -243,18 +286,24 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual ValueTask SetApplicationIdAsync(TAuthorization authorization, string? identifier, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         authorization.ApplicationId = identifier;
         return default;
     }
 
     public virtual ValueTask SetCreationDateAsync(TAuthorization authorization, DateTimeOffset? date, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         authorization.CreationDate = date?.UtcDateTime;
         return default;
     }
 
     public virtual ValueTask SetPropertiesAsync(TAuthorization authorization, ImmutableDictionary<string, JsonElement> properties, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         if (properties is null || properties.IsEmpty)
         {
             authorization.Properties = ImmutableDictionary.Create<string, object>();
@@ -275,6 +324,8 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual ValueTask SetScopesAsync(TAuthorization authorization, ImmutableArray<string> scopes, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         if (scopes.IsDefaultOrEmpty)
         {
             authorization.Scopes = [];
@@ -288,24 +339,32 @@ public class OpenIddictRavenDBAuthorizationStore<TAuthorization>(IAsyncDocumentS
 
     public virtual ValueTask SetStatusAsync(TAuthorization authorization, string? status, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         authorization.Status = status;
         return default;
     }
 
     public virtual ValueTask SetSubjectAsync(TAuthorization authorization, string? subject, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         authorization.Subject = subject;
         return default;
     }
 
     public virtual ValueTask SetTypeAsync(TAuthorization authorization, string? type, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         authorization.Type = type;
         return default;
     }
 
     public virtual async ValueTask UpdateAsync(TAuthorization authorization, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(authorization);
+
         var changeVector = Session.Advanced.GetChangeVectorFor(authorization);
         await Session.StoreAsync(authorization, changeVector, authorization.Id, cancellationToken);
         await Session.SaveChangesAsync(cancellationToken);
