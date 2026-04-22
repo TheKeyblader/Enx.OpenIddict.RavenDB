@@ -1,9 +1,12 @@
-﻿using System;
-using System.ComponentModel;
-
+﻿using Enx.OpenIddict.RavenDB;
 using Enx.OpenIddict.RavenDB.Models;
-
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using OpenIddict.Abstractions;
 using OpenIddict.Core;
+using System;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
@@ -32,7 +35,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public OpenIddictRavenDBBuilder ReplaceDefaultApplicationEntity<TApplication>()
             where TApplication : OpenIddictRavenDBApplication
         {
-            Services.Configure<OpenIddictCoreOptions>(options => options.DefaultApplicationType = typeof(TApplication));
+            Services.Replace(ServiceDescriptor.Scoped<IOpenIddictApplicationManager>(static provider =>
+                provider.GetRequiredService<OpenIddictApplicationManager<TApplication>>()));
+
+            Services.Replace(ServiceDescriptor.Scoped<
+                IOpenIddictApplicationStore<TApplication>, OpenIddictRavenDBApplicationStore<TApplication>>());
 
             return this;
         }
@@ -44,7 +51,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public OpenIddictRavenDBBuilder ReplaceDefaultAuthorizationEntity<TAuthorization>()
             where TAuthorization : OpenIddictRavenDBAuthorization
         {
-            Services.Configure<OpenIddictCoreOptions>(options => options.DefaultAuthorizationType = typeof(TAuthorization));
+            Services.Replace(ServiceDescriptor.Scoped<IOpenIddictAuthorizationManager>(static provider =>
+                provider.GetRequiredService<OpenIddictAuthorizationManager<TAuthorization>>()));
+
+            Services.Replace(ServiceDescriptor.Scoped<
+                IOpenIddictAuthorizationStore<TAuthorization>, OpenIddictRavenDBAuthorizationStore<TAuthorization>>());
 
             return this;
         }
@@ -56,7 +67,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public OpenIddictRavenDBBuilder ReplaceDefaultScopeEntity<TScope>()
             where TScope : OpenIddictRavenDBScope
         {
-            Services.Configure<OpenIddictCoreOptions>(options => options.DefaultScopeType = typeof(TScope));
+            Services.Replace(ServiceDescriptor.Scoped<IOpenIddictScopeManager>(static provider =>
+                provider.GetRequiredService<OpenIddictScopeManager<TScope>>()));
+
+            Services.Replace(ServiceDescriptor.Scoped<
+                IOpenIddictScopeStore<TScope>, OpenIddictRavenDBScopeStore<TScope>>());
 
             return this;
         }
@@ -68,7 +83,11 @@ namespace Microsoft.Extensions.DependencyInjection
         public OpenIddictRavenDBBuilder ReplaceDefaultTokenEntity<TToken>()
             where TToken : OpenIddictRavenDBToken
         {
-            Services.Configure<OpenIddictCoreOptions>(options => options.DefaultTokenType = typeof(TToken));
+            Services.Replace(ServiceDescriptor.Scoped<IOpenIddictTokenManager>(static provider =>
+                provider.GetRequiredService<OpenIddictTokenManager<TToken>>()));
+
+            Services.Replace(ServiceDescriptor.Scoped<
+                IOpenIddictTokenStore<TToken>, OpenIddictRavenDBTokenStore<TToken>>());
 
             return this;
         }

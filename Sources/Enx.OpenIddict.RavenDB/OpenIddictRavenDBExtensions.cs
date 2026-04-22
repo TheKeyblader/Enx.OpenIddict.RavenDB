@@ -35,15 +35,11 @@ namespace Microsoft.Extensions.DependencyInjection
 
             // Note: the Mongo stores/resolvers don't depend on scoped/transient services and thus
             // can be safely registered as singleton services and shared/reused across requests.
-            builder.ReplaceApplicationStoreResolver<OpenIddictRavenDBApplicationStoreResolver>(ServiceLifetime.Scoped)
-                   .ReplaceAuthorizationStoreResolver<OpenIddictRavenDBAuthorizationStoreResolver>(ServiceLifetime.Scoped)
-                   .ReplaceScopeStoreResolver<OpenIddictRavenDBScopeStoreResolver>(ServiceLifetime.Scoped)
-                   .ReplaceTokenStoreResolver<OpenIddictRavenDBTokenStoreResolver>(ServiceLifetime.Scoped);
 
-            builder.Services.TryAddScoped(typeof(OpenIddictRavenDBApplicationStore<>));
-            builder.Services.TryAddScoped(typeof(OpenIddictRavenDBAuthorizationStore<>));
-            builder.Services.TryAddScoped(typeof(OpenIddictRavenDBScopeStore<>));
-            builder.Services.TryAddScoped(typeof(OpenIddictRavenDBTokenStore<>));
+            builder.ReplaceApplicationStore<OpenIddictRavenDBApplication, OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>>()
+                   .ReplaceAuthorizationStore<OpenIddictRavenDBAuthorization, OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>>()
+                   .ReplaceScopeStore<OpenIddictRavenDBScope, OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>>()
+                   .ReplaceTokenStore<OpenIddictRavenDBToken, OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>>();
 
             return new OpenIddictRavenDBBuilder(builder.Services);
         }

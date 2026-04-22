@@ -12,9 +12,8 @@ namespace Enx.OpenIddict.RavenDB.Indexes
         public class Result
         {
             public string? Name { get; set; }
-
-            public virtual IReadOnlyDictionary<CultureInfo, string> DisplayNames { get; set; }
-                = ImmutableDictionary.Create<CultureInfo, string>();
+            public virtual IReadOnlyList<string> Resources { get; set; }
+                = ImmutableList.Create<string>();
         }
 
         public ScopeIndex()
@@ -23,7 +22,7 @@ namespace Enx.OpenIddict.RavenDB.Indexes
                             select new Result
                             {
                                 Name = scope.Name,
-                                DisplayNames = scope.DisplayNames
+                                Resources = scope.Resources
                             };
         }
     }

@@ -20,45 +20,40 @@ using SR = OpenIddict.Abstractions.OpenIddictResources;
 
 namespace Enx.OpenIddict.RavenDB
 {
-    public class OpenIddictRavenDBScopeStore<TScope> : IOpenIddictScopeStore<TScope>
+    public class OpenIddictRavenDBScopeStore<TScope>(IAsyncDocumentSession session) : IOpenIddictScopeStore<TScope>
         where TScope : OpenIddictRavenDBScope
     {
-        public OpenIddictRavenDBScopeStore(IAsyncDocumentSession session)
-        {
-            Session = session;
-        }
-
-        protected IAsyncDocumentSession Session { get; }
+        protected IAsyncDocumentSession Session { get; } = session;
 
         public virtual async ValueTask<long> CountAsync(CancellationToken cancellationToken)
         {
             return await Session.Query<TScope>().CountAsync(cancellationToken);
         }
 
-        public virtual async ValueTask<long> CountAsync<TResult>( Func<IQueryable<TScope>, IQueryable<TResult>> query, CancellationToken cancellationToken)
+        public virtual async ValueTask<long> CountAsync<TResult>(Func<IQueryable<TScope>, IQueryable<TResult>> query, CancellationToken cancellationToken)
         {
             return await query(Session.Query<TScope>()).CountAsync(cancellationToken);
         }
 
-        public virtual async ValueTask CreateAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual async ValueTask CreateAsync(TScope scope, CancellationToken cancellationToken)
         {
             await Session.StoreAsync(scope, cancellationToken);
             await Session.SaveChangesAsync(cancellationToken);
         }
 
-        public virtual async ValueTask DeleteAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual async ValueTask DeleteAsync(TScope scope, CancellationToken cancellationToken)
         {
             var changeVector = Session.Advanced.GetChangeVectorFor(scope);
             Session.Delete(scope.Id, changeVector);
             await Session.SaveChangesAsync(cancellationToken);
         }
 
-        public virtual async ValueTask<TScope?> FindByIdAsync( string identifier, CancellationToken cancellationToken)
+        public virtual async ValueTask<TScope?> FindByIdAsync(string identifier, CancellationToken cancellationToken)
         {
             return await Session.LoadAsync<TScope>(identifier, cancellationToken);
         }
 
-        public virtual async ValueTask<TScope?> FindByNameAsync( string name, CancellationToken cancellationToken)
+        public virtual async ValueTask<TScope?> FindByNameAsync(string name, CancellationToken cancellationToken)
         {
             return await Session.Query<TScope>().FirstOrDefaultAsync(s => s.Name == name, cancellationToken);
         }
@@ -70,27 +65,27 @@ namespace Enx.OpenIddict.RavenDB
                 throw new ArgumentException(SR.GetResourceString(SR.ID0203), nameof(names));
             }
 
-            var query = Session.Query<TScope, ScopeIndex>().Where(s => Enumerable.Contains(names, s.Name));
+            var query = Session.Query<TScope, ScopeIndex>().Where(s => s.Name.In(names));
             return Session.ToAsyncEnumerable(query, cancellationToken);
         }
 
-        public virtual IAsyncEnumerable<TScope> FindByResourceAsync( string resource, CancellationToken cancellationToken)
+        public virtual IAsyncEnumerable<TScope> FindByResourceAsync(string resource, CancellationToken cancellationToken)
         {
             var query = Session.Query<TScope, ScopeIndex>().Where(s => s.Resources.Contains(resource));
             return Session.ToAsyncEnumerable(query, cancellationToken);
         }
 
-        public virtual async ValueTask<TResult> GetAsync<TState, TResult>( Func<IQueryable<TScope>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
+        public virtual async ValueTask<TResult?> GetAsync<TState, TResult>(Func<IQueryable<TScope>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
         {
             return await query(Session.Query<TScope>(), state).FirstOrDefaultAsync(cancellationToken);
         }
 
-        public virtual ValueTask<string?> GetDescriptionAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<string?> GetDescriptionAsync(TScope scope, CancellationToken cancellationToken)
         {
             return new ValueTask<string?>(scope.Description);
         }
 
-        public virtual ValueTask<ImmutableDictionary<CultureInfo, string>> GetDescriptionsAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<ImmutableDictionary<CultureInfo, string>> GetDescriptionsAsync(TScope scope, CancellationToken cancellationToken)
         {
             if (scope.Descriptions is null || scope.Descriptions.Count == 0)
             {
@@ -100,12 +95,12 @@ namespace Enx.OpenIddict.RavenDB
             return new ValueTask<ImmutableDictionary<CultureInfo, string>>(scope.Descriptions.ToImmutableDictionary());
         }
 
-        public virtual ValueTask<string?> GetDisplayNameAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<string?> GetDisplayNameAsync(TScope scope, CancellationToken cancellationToken)
         {
             return new ValueTask<string?>(scope.DisplayName);
         }
 
-        public virtual ValueTask<ImmutableDictionary<CultureInfo, string>> GetDisplayNamesAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<ImmutableDictionary<CultureInfo, string>> GetDisplayNamesAsync(TScope scope, CancellationToken cancellationToken)
         {
             if (scope.DisplayNames is null || scope.DisplayNames.Count == 0)
             {
@@ -115,17 +110,17 @@ namespace Enx.OpenIddict.RavenDB
             return new ValueTask<ImmutableDictionary<CultureInfo, string>>(scope.DisplayNames.ToImmutableDictionary());
         }
 
-        public virtual ValueTask<string?> GetIdAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<string?> GetIdAsync(TScope scope, CancellationToken cancellationToken)
         {
             return new ValueTask<string?>(scope.Id);
         }
 
-        public virtual ValueTask<string?> GetNameAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<string?> GetNameAsync(TScope scope, CancellationToken cancellationToken)
         {
             return new ValueTask<string?>(scope.Name);
         }
 
-        public virtual ValueTask<ImmutableDictionary<string, JsonElement>> GetPropertiesAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<ImmutableDictionary<string, JsonElement>> GetPropertiesAsync(TScope scope, CancellationToken cancellationToken)
         {
             if (scope.Properties is null)
             {
@@ -141,14 +136,14 @@ namespace Enx.OpenIddict.RavenDB
             return new ValueTask<ImmutableDictionary<string, JsonElement>>(builder.ToImmutable());
         }
 
-        public virtual ValueTask<ImmutableArray<string>> GetResourcesAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual ValueTask<ImmutableArray<string>> GetResourcesAsync(TScope scope, CancellationToken cancellationToken)
         {
             if (scope.Resources is null || scope.Resources.Count == 0)
             {
-                return new ValueTask<ImmutableArray<string>>(ImmutableArray.Create<string>());
+                return new ValueTask<ImmutableArray<string>>([]);
             }
 
-            return new ValueTask<ImmutableArray<string>>(scope.Resources.ToImmutableArray());
+            return new ValueTask<ImmutableArray<string>>([.. scope.Resources]);
         }
 
         public virtual ValueTask<TScope> InstantiateAsync(CancellationToken cancellationToken)
@@ -182,42 +177,42 @@ namespace Enx.OpenIddict.RavenDB
             return Session.ToAsyncEnumerable(query, cancellationToken);
         }
 
-        public virtual IAsyncEnumerable<TResult> ListAsync<TState, TResult>( Func<IQueryable<TScope>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
+        public virtual IAsyncEnumerable<TResult> ListAsync<TState, TResult>(Func<IQueryable<TScope>, TState, IQueryable<TResult>> query, TState state, CancellationToken cancellationToken)
         {
             return Session.ToAsyncEnumerable(query(Session.Query<TScope>(), state), cancellationToken);
         }
 
-        public virtual ValueTask SetDescriptionAsync( TScope scope, string? description, CancellationToken cancellationToken)
+        public virtual ValueTask SetDescriptionAsync(TScope scope, string? description, CancellationToken cancellationToken)
         {
             scope.Description = description;
             return default;
         }
 
-        public virtual ValueTask SetDescriptionsAsync( TScope scope, ImmutableDictionary<CultureInfo, string> descriptions, CancellationToken cancellationToken)
+        public virtual ValueTask SetDescriptionsAsync(TScope scope, ImmutableDictionary<CultureInfo, string> descriptions, CancellationToken cancellationToken)
         {
             scope.Descriptions = descriptions;
             return default;
         }
 
-        public virtual ValueTask SetDisplayNameAsync( TScope scope, string? name, CancellationToken cancellationToken)
+        public virtual ValueTask SetDisplayNameAsync(TScope scope, string? name, CancellationToken cancellationToken)
         {
             scope.DisplayName = name;
             return default;
         }
 
-        public virtual ValueTask SetDisplayNamesAsync( TScope scope, ImmutableDictionary<CultureInfo, string> names, CancellationToken cancellationToken)
+        public virtual ValueTask SetDisplayNamesAsync(TScope scope, ImmutableDictionary<CultureInfo, string> names, CancellationToken cancellationToken)
         {
             scope.DisplayNames = names;
             return default;
         }
 
-        public virtual ValueTask SetNameAsync( TScope scope, string? name, CancellationToken cancellationToken)
+        public virtual ValueTask SetNameAsync(TScope scope, string? name, CancellationToken cancellationToken)
         {
             scope.Name = name;
             return default;
         }
 
-        public virtual ValueTask SetPropertiesAsync( TScope scope, ImmutableDictionary<string, JsonElement> properties, CancellationToken cancellationToken)
+        public virtual ValueTask SetPropertiesAsync(TScope scope, ImmutableDictionary<string, JsonElement> properties, CancellationToken cancellationToken)
         {
             if (properties is null || properties.IsEmpty)
             {
@@ -237,13 +232,13 @@ namespace Enx.OpenIddict.RavenDB
             return default;
         }
 
-        public virtual ValueTask SetResourcesAsync( TScope scope, ImmutableArray<string> resources, CancellationToken cancellationToken)
+        public virtual ValueTask SetResourcesAsync(TScope scope, ImmutableArray<string> resources, CancellationToken cancellationToken)
         {
             scope.Resources = resources;
             return default;
         }
 
-        public virtual async ValueTask UpdateAsync( TScope scope, CancellationToken cancellationToken)
+        public virtual async ValueTask UpdateAsync(TScope scope, CancellationToken cancellationToken)
         {
             var changeVector = Session.Advanced.GetChangeVectorFor(scope);
             await Session.StoreAsync(scope, changeVector, scope.Id, cancellationToken);
