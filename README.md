@@ -4,7 +4,7 @@ RavenDB storage provider for [OpenIddict](https://github.com/openiddict/openiddi
 
 [![NuGet](https://img.shields.io/nuget/v/Enx.OpenIddict.RavenDB.svg)](https://www.nuget.org/packages/Enx.OpenIddict.RavenDB)
 [![CI](https://github.com/TheKeyblader/Enx.OpenIddict.RavenDB/actions/workflows/dotnet.yml/badge.svg)](https://github.com/TheKeyblader/Enx.OpenIddict.RavenDB/actions/workflows/dotnet.yml)
-[![codecov](https://codecov.io/gh/TheKeyblader/Enx.OpenIddict.RavenDB/graph/badge.svg)](https://codecov.io/gh/TheKeyblader/Enx.OpenIddict.RavenDB)
+[![codecov](https://codecov.io/gh/TheKeyblader/Enx.OpenIddict.RavenDB/graph/badge.svg?token=3EKSCB86VR)](https://codecov.io/gh/TheKeyblader/Enx.OpenIddict.RavenDB)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Overview
