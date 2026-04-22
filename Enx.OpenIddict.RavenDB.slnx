@@ -10,6 +10,9 @@
     <Project Path="Sources/Enx.OpenIddict.RavenDB.Models/Enx.OpenIddict.RavenDB.Models.csproj" />
     <Project Path="Sources/Enx.OpenIddict.RavenDB/Enx.OpenIddict.RavenDB.csproj" />
   </Folder>
+  <Folder Name="/UnitTests/">
+    <Project Path="UnitTests/Enx.OpenIddict.RavenDB.Tests/Enx.OpenIddict.RavenDB.Tests.csproj" Id="acb8c6c8-f093-409c-8d1b-476644b50050" />
+  </Folder>
   <Properties Name="ExtensibilityGlobals" Scope="PostLoad">
     <Property Name="FileExplorer" />
   </Properties>

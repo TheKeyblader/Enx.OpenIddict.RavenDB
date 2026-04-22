@@ -38,8 +38,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Services.Replace(ServiceDescriptor.Scoped<IOpenIddictApplicationManager>(static provider =>
                 provider.GetRequiredService<OpenIddictApplicationManager<TApplication>>()));
 
-            Services.Replace(ServiceDescriptor.Scoped<IOpenIddictApplicationStore<TApplication>>(static provider =>
-                provider.GetRequiredService<OpenIddictRavenDBApplicationStore<TApplication>>()));
+            Services.Replace(ServiceDescriptor.Scoped<
+                IOpenIddictApplicationStore<TApplication>, OpenIddictRavenDBApplicationStore<TApplication>>());
 
             return this;
         }
@@ -54,8 +54,8 @@ namespace Microsoft.Extensions.DependencyInjection
             Services.Replace(ServiceDescriptor.Scoped<IOpenIddictAuthorizationManager>(static provider =>
                 provider.GetRequiredService<OpenIddictAuthorizationManager<TAuthorization>>()));
 
-            Services.Replace(ServiceDescriptor.Scoped<IOpenIddictAuthorizationStore<TAuthorization>>(static provider =>
-                provider.GetRequiredService<OpenIddictRavenDBAuthorizationStore<TAuthorization>>()));
+            Services.Replace(ServiceDescriptor.Scoped<
+                IOpenIddictAuthorizationStore<TAuthorization>, OpenIddictRavenDBAuthorizationStore<TAuthorization>>());
 
             return this;
         }
