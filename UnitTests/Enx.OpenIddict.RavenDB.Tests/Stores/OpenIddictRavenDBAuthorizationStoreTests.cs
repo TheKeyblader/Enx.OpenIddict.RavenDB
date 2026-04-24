@@ -1,19 +1,25 @@
 using Enx.OpenIddict.RavenDB.Models;
-using Raven.Client.Documents;
 using System.Collections.Immutable;
 using System.Text.Json;
+using Raven.Client.Documents.Session;
 
 namespace Enx.OpenIddict.RavenDB.Tests;
 
-public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
+public abstract class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
 {
+    protected abstract bool UseStaticIndexes { get; }
+
+    protected OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization> CreateStore(
+        IAsyncDocumentSession session) =>
+        new(session, CreateOptions(UseStaticIndexes));
+
     [Fact]
     public async Task Should_IncreaseCount_When_CountingAuthorizationsAfterCreatingOne()
     {
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
         var beforeCount = await authorizationStore.CountAsync(CancellationToken.None);
         await authorizationStore.CreateAsync(authorization, CancellationToken.None);
@@ -32,7 +38,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await authorizationStore.CreateAsync(
             new OpenIddictRavenDBAuthorization { Subject = subject },
@@ -54,7 +60,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -68,7 +74,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization
         {
             ApplicationId = Guid.NewGuid().ToString(),
@@ -90,7 +96,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -104,7 +110,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization
         {
             ApplicationId = Guid.NewGuid().ToString(),
@@ -125,7 +131,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await authorizationStore.CreateAsync(
             new OpenIddictRavenDBAuthorization { Subject = subject },
@@ -144,6 +150,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(auth);
         }
+
         Assert.Single(matchedAuthorizations);
         Assert.Equal(subject, matchedAuthorizations[0].Subject);
     }
@@ -154,7 +161,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var authorizationCount = 10;
         var authorizationIds = new List<string>();
@@ -164,6 +171,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
             await authorizationStore.CreateAsync(authorization, CancellationToken.None);
             authorizationIds.Add(authorization.Id!);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -175,6 +183,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Equal(authorizationCount, matchedAuthorizations.Count);
         Assert.False(authorizationIds.Except(matchedAuthorizations.Select(x => x.Id!)).Any());
     }
@@ -185,7 +194,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
@@ -193,6 +202,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 new OpenIddictRavenDBAuthorization { Subject = index.ToString() },
                 CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -205,6 +215,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Equal(expectedCount, matchedAuthorizations.Count);
     }
 
@@ -214,7 +225,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
@@ -222,6 +233,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 new OpenIddictRavenDBAuthorization { Subject = index.ToString() },
                 CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         var pageSize = 5;
@@ -252,7 +264,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -267,12 +279,12 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         using var store = GetDocumentStore();
 
         using var session1 = store.OpenAsyncSession();
-        var authorizationStore1 = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session1);
+        var authorizationStore1 = CreateStore(session1);
         var authorization = new OpenIddictRavenDBAuthorization();
         await authorizationStore1.CreateAsync(authorization, CancellationToken.None);
 
         using var session2 = store.OpenAsyncSession();
-        var authorizationStore2 = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session2);
+        var authorizationStore2 = CreateStore(session2);
         var authInSession2 = await authorizationStore2.FindByIdAsync(authorization.Id!, CancellationToken.None);
         authInSession2!.Subject = "Modified by session 2";
         await authorizationStore2.UpdateAsync(authInSession2, CancellationToken.None);
@@ -289,7 +301,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
         await authorizationStore.CreateAsync(authorization, CancellationToken.None);
 
@@ -309,7 +321,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -323,7 +335,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -340,7 +352,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -354,7 +366,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -371,7 +383,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -385,7 +397,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -402,7 +414,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -416,7 +428,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -432,7 +444,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -453,7 +465,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -467,7 +479,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -486,7 +498,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -512,7 +524,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -526,7 +538,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -542,7 +554,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization
         {
             Properties = new Dictionary<string, object>
@@ -567,7 +579,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -581,7 +593,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -598,7 +610,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -612,7 +624,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -629,7 +641,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act
         var authorization = await authorizationStore.InstantiateAsync(CancellationToken.None);
@@ -644,7 +656,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -658,7 +670,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization { Type = "SomeType" };
 
         // Act
@@ -675,7 +687,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -689,7 +701,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization { Subject = "SomeSubject" };
 
         // Act
@@ -706,7 +718,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -720,7 +732,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization { Status = "SomeStatus" };
 
         // Act
@@ -737,7 +749,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -751,7 +763,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
         await authorizationStore.CreateAsync(authorization, CancellationToken.None);
 
@@ -769,7 +781,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -783,7 +795,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var utcNow = DateTime.UtcNow;
         var authorization = new OpenIddictRavenDBAuthorization { CreationDate = utcNow };
 
@@ -801,7 +813,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -815,7 +827,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization
         {
             ApplicationId = Guid.NewGuid().ToString(),
@@ -835,7 +847,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await authorizationStore.CreateAsync(
             new OpenIddictRavenDBAuthorization { Subject = subject },
@@ -859,7 +871,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -873,7 +885,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
 
         // Act
@@ -889,7 +901,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization
         {
             Scopes = ["get", "set", "delete"],
@@ -908,7 +920,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act
         var authorizations = authorizationStore.FindAsync("test", "test", null, null, null, CancellationToken.None);
@@ -919,6 +931,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Empty(matchedAuthorizations);
     }
 
@@ -928,7 +941,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var suffix = Guid.NewGuid().ToString();
         var count = 10;
@@ -940,6 +953,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 ApplicationId = index.ToString(),
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -952,6 +966,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
             if (authorization.Subject?.EndsWith(suffix) == true)
                 matchedAuthorizations.Add(authorization);
         }
+
         Assert.Equal(count, matchedAuthorizations.Count);
     }
 
@@ -961,7 +976,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var uniqueKey = Guid.NewGuid().ToString();
         foreach (var index in Enumerable.Range(0, 10))
@@ -972,6 +987,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 ApplicationId = $"{index}-{uniqueKey}",
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -984,6 +1000,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Single(matchedAuthorizations);
     }
 
@@ -993,7 +1010,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var status = "some-status";
         var uniqueKey = Guid.NewGuid().ToString();
@@ -1006,6 +1023,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Status = status,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1018,6 +1036,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Single(matchedAuthorizations);
     }
 
@@ -1027,7 +1046,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var status = "some-status";
         var type = "some-type";
@@ -1042,6 +1061,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Type = type,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1054,6 +1074,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Single(matchedAuthorizations);
     }
 
@@ -1063,7 +1084,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var status = "some-status";
         var type = "some-type";
@@ -1080,6 +1101,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Scopes = scopes,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1097,6 +1119,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Single(matchedAuthorizations);
     }
 
@@ -1106,7 +1129,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
@@ -1120,7 +1143,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act
         var authorizations = authorizationStore.FindByApplicationIdAsync(
@@ -1132,6 +1155,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Empty(matchedAuthorizations);
     }
 
@@ -1141,7 +1165,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var applicationId = Guid.NewGuid().ToString();
         var authorizationCount = 10;
@@ -1153,6 +1177,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 ApplicationId = applicationId,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1164,6 +1189,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Equal(authorizationCount, matchedAuthorizations.Count);
     }
 
@@ -1173,7 +1199,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
@@ -1187,7 +1213,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act
         var authorizations = authorizationStore.FindBySubjectAsync(
@@ -1199,6 +1225,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Empty(matchedAuthorizations);
     }
 
@@ -1208,7 +1235,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var subject = Guid.NewGuid().ToString();
         var authorizationCount = 10;
@@ -1220,6 +1247,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Subject = subject,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1231,6 +1259,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         {
             matchedAuthorizations.Add(authorization);
         }
+
         Assert.Equal(authorizationCount, matchedAuthorizations.Count);
     }
 
@@ -1240,7 +1269,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1254,7 +1283,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorization = new OpenIddictRavenDBAuthorization();
         await authorizationStore.CreateAsync(authorization, CancellationToken.None);
 
@@ -1272,7 +1301,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         foreach (var _ in Enumerable.Range(0, 10))
         {
@@ -1281,6 +1310,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 CreationDate = DateTime.UtcNow.AddDays(-5),
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1296,7 +1326,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var authorizationCount = 10;
 
         foreach (var _ in Enumerable.Range(0, authorizationCount))
@@ -1307,6 +1337,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Status = Statuses.Valid,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1322,7 +1353,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
         var threshold = DateTimeOffset.UtcNow.AddDays(-5);
         foreach (var index in Enumerable.Range(0, 10))
         {
@@ -1332,6 +1363,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Status = Statuses.Inactive,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
         // Act
         var deleted = await authorizationStore.PruneAsync(threshold, CancellationToken.None);
@@ -1346,7 +1378,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var status = "some-status";
         var type = "some-type";
@@ -1361,6 +1393,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Type = type,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1378,6 +1411,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
             Assert.Equal(Statuses.Revoked, authorization.Status);
             matchCount++;
         }
+
         Assert.Equal(1, matchCount);
     }
 
@@ -1387,7 +1421,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var status = "some-status";
         var type = "some-type";
@@ -1402,6 +1436,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Type = type,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1419,6 +1454,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
             Assert.Equal(Statuses.Revoked, authorization.Status);
             matchCount++;
         }
+
         Assert.Equal(1, matchCount);
     }
 
@@ -1428,7 +1464,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var authorizationStore = CreateStore(session);
 
         var status = "some-status";
         var type = "some-type";
@@ -1443,6 +1479,7 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
                 Type = type,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1460,6 +1497,17 @@ public class OpenIddictRavenDBAuthorizationStoreTests : RavenBaseTest
             Assert.Equal(Statuses.Revoked, authorization.Status);
             matchCount++;
         }
+
         Assert.Equal(1, matchCount);
     }
+}
+
+public class OpenIddictRavenDBAuthorizationStoreTests_StaticIndexes : OpenIddictRavenDBAuthorizationStoreTests
+{
+    protected override bool UseStaticIndexes => true;
+}
+
+public class OpenIddictRavenDBAuthorizationStoreTests_DynamicIndexes : OpenIddictRavenDBAuthorizationStoreTests
+{
+    protected override bool UseStaticIndexes => false;
 }

@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Enx.OpenIddict.RavenDB.Models;
-using Xunit;
 
 namespace Enx.OpenIddict.RavenDB.Tests;
 

@@ -2,43 +2,40 @@
 using System.Collections.Immutable;
 using System.Globalization;
 
-namespace Enx.OpenIddict.RavenDB.Models
+namespace Enx.OpenIddict.RavenDB.Models;
+
+public class OpenIddictRavenDBApplication
 {
-    public class OpenIddictRavenDBApplication
-    {
-        public virtual string? ApplicationType { get; set; }
+    public string? ApplicationType { get; set; }
 
-        public virtual string? ClientId { get; set; }
+    public string? ClientId { get; set; }
 
-        public virtual string? ClientSecret { get; set; }
+    public string? ClientSecret { get; set; }
 
-        public virtual string? ConsentType { get; set; }
+    public string? ConsentType { get; set; }
 
-        public virtual string? DisplayName { get; set; }
+    public string? DisplayName { get; set; }
 
-        public virtual IReadOnlyDictionary<CultureInfo, string> DisplayNames { get; set; }
-            = ImmutableDictionary.Create<CultureInfo, string>();
+    public IReadOnlyDictionary<CultureInfo, string> DisplayNames { get; set; }
+        = ImmutableDictionary.Create<CultureInfo, string>();
 
-        public virtual string? Id { get; set; }
+    public string? Id { get; set; }
 
-        public virtual string? JsonWebKeySet { get; set; }
+    public string? JsonWebKeySet { get; set; }
 
-        public virtual IReadOnlyList<string> Permissions { get; set; } = [];
+    public IReadOnlyList<string> Permissions { get; set; } = [];
 
-        public virtual IReadOnlyList<string> PostLogoutRedirectUris { get; set; } = [];
+    public IReadOnlyList<string> PostLogoutRedirectUris { get; set; } = [];
 
-        public virtual IDictionary<string, object> Properties { get; set; }
-            = new Dictionary<string, object>();
+    public IDictionary<string, object> Properties { get; set; }
+        = new Dictionary<string, object>();
 
-        public virtual IReadOnlyList<string> RedirectUris { get; set; } = [];
+    public IReadOnlyList<string> RedirectUris { get; set; } = [];
 
-        public virtual IReadOnlyList<string> Requirements { get; set; } = [];
+    public IReadOnlyList<string> Requirements { get; set; } = [];
 
-        public virtual IReadOnlyDictionary<string, string> Settings { get; set; }
-            = ImmutableDictionary.Create<string, string>();
+    public IReadOnlyDictionary<string, string> Settings { get; set; }
+        = ImmutableDictionary.Create<string, string>();
 
-        public virtual string? Type { get; set; }
-
-
-    }
+    public string? Type { get; set; }
 }

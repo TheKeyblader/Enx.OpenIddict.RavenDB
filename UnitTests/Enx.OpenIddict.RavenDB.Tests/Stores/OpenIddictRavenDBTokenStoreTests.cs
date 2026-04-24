@@ -1,18 +1,24 @@
 using Enx.OpenIddict.RavenDB.Models;
 using System.Collections.Immutable;
 using System.Text.Json;
+using Raven.Client.Documents.Session;
 
 namespace Enx.OpenIddict.RavenDB.Tests;
 
-public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
+public abstract class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
 {
+    protected abstract bool UseStaticIndexes { get; }
+
+    protected OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken> CreateStore(IAsyncDocumentSession session) =>
+        new(session, CreateOptions(UseStaticIndexes));
+
     [Fact]
     public async Task Should_IncreaseCount_When_CountingTokensAfterCreatingOne()
     {
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
         var beforeCount = await tokenStore.CountAsync(CancellationToken.None);
         await tokenStore.CreateAsync(token, CancellationToken.None);
@@ -31,7 +37,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = subject }, CancellationToken.None);
         WaitForIndexing(store);
@@ -51,7 +57,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
 
         // Act
@@ -70,8 +76,10 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var tokenStore = CreateStore(session);
+        var authorizationStore =
+            new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session,
+                CreateOptions(UseStaticIndexes));
         var authorization = new OpenIddictRavenDBAuthorization { Status = Statuses.Valid };
         await authorizationStore.CreateAsync(authorization, CancellationToken.None);
 
@@ -87,7 +95,8 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Assert
         Assert.NotNull(token.Id);
         using var session2 = store.OpenAsyncSession();
-        var reloadedAuth = await session2.LoadAsync<OpenIddictRavenDBAuthorization>(authorization.Id!, CancellationToken.None);
+        var reloadedAuth =
+            await session2.LoadAsync<OpenIddictRavenDBAuthorization>(authorization.Id!, CancellationToken.None);
         Assert.NotNull(reloadedAuth);
         Assert.Contains(token.Id!, reloadedAuth!.Tokens);
     }
@@ -98,7 +107,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
         await tokenStore.CreateAsync(token, CancellationToken.None);
 
@@ -116,7 +125,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         WaitForIndexing(store);
 
         // Act
@@ -138,7 +147,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         var appId = Guid.NewGuid().ToString();
         var status = Guid.NewGuid().ToString();
@@ -154,6 +163,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
                 Type = type,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -172,7 +182,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var appId = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { ApplicationId = appId }, CancellationToken.None);
         WaitForIndexing(store);
@@ -194,7 +204,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var authId = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { AuthorizationId = authId }, CancellationToken.None);
         WaitForIndexing(store);
@@ -216,7 +226,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         // Act
         var token = await tokenStore.FindByIdAsync("doesnt-exist", CancellationToken.None);
@@ -231,7 +241,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
         await tokenStore.CreateAsync(token, CancellationToken.None);
 
@@ -249,7 +259,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var referenceId = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { ReferenceId = referenceId }, CancellationToken.None);
         WaitForIndexing(store);
@@ -268,7 +278,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = subject }, CancellationToken.None);
         WaitForIndexing(store);
@@ -290,7 +300,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { ApplicationId = Guid.NewGuid().ToString() };
 
         // Act
@@ -306,7 +316,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { AuthorizationId = Guid.NewGuid().ToString() };
 
         // Act
@@ -322,7 +332,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { CreationDate = DateTime.UtcNow };
 
         // Act
@@ -339,7 +349,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { ExpirationDate = DateTime.UtcNow.AddHours(1) };
 
         // Act
@@ -356,7 +366,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
         await tokenStore.CreateAsync(token, CancellationToken.None);
 
@@ -374,7 +384,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Payload = Guid.NewGuid().ToString() };
 
         // Act
@@ -390,7 +400,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
 
         // Act
@@ -406,7 +416,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         token.Properties["Test"] = true;
         token.Properties["Testing"] = "value";
@@ -425,7 +435,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { RedemptionDate = DateTime.UtcNow };
 
         // Act
@@ -442,7 +452,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { ReferenceId = Guid.NewGuid().ToString() };
 
         // Act
@@ -458,7 +468,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Status = Statuses.Valid };
 
         // Act
@@ -474,7 +484,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
 
         // Act
@@ -490,7 +500,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Type = TokenTypes.Bearer };
 
         // Act
@@ -506,7 +516,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = subject }, CancellationToken.None);
         WaitForIndexing(store);
@@ -528,7 +538,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         // Act
         var token = await tokenStore.InstantiateAsync(CancellationToken.None);
@@ -543,7 +553,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         var tokenCount = 10;
         var tokenIds = new List<string>();
@@ -553,6 +563,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
             await tokenStore.CreateAsync(token, CancellationToken.None);
             tokenIds.Add(token.Id!);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -572,12 +583,14 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
-            await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = index.ToString() }, CancellationToken.None);
+            await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = index.ToString() },
+                CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -597,12 +610,14 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
-            await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = index.ToString() }, CancellationToken.None);
+            await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = index.ToString() },
+                CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -628,7 +643,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = Guid.NewGuid().ToString();
         await tokenStore.CreateAsync(new OpenIddictRavenDBToken { Subject = subject }, CancellationToken.None);
         WaitForIndexing(store);
@@ -652,7 +667,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         foreach (var _ in Enumerable.Range(0, 10))
         {
@@ -661,6 +676,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
                 CreationDate = DateTime.UtcNow.AddDays(-5),
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -676,8 +692,10 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
-        var authorizationStore = new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session);
+        var tokenStore = CreateStore(session);
+        var authorizationStore =
+            new OpenIddictRavenDBAuthorizationStore<OpenIddictRavenDBAuthorization>(session,
+                CreateOptions(UseStaticIndexes));
 
         foreach (var _ in Enumerable.Range(0, 10))
         {
@@ -690,6 +708,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
                 Status = Statuses.Valid,
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -705,7 +724,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         var threshold = DateTimeOffset.UtcNow.AddDays(-5);
         // indices 0..9 days ago, no authorization → AuthorizationStatus null → condition met
@@ -716,6 +735,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
                 CreationDate = DateTime.UtcNow.AddDays(-index),
             }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act — threshold = -5 days (strict <), so indices 6,7,8,9 qualify → 4 deleted
@@ -731,7 +751,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = $"revoke-subject-{Guid.NewGuid()}";
         var appId = $"revoke-app-{Guid.NewGuid()}";
         foreach (var _ in Enumerable.Range(0, 5))
@@ -756,6 +776,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
             Assert.Equal(Statuses.Revoked, token.Status);
             count++;
         }
+
         Assert.Equal(5, count);
     }
 
@@ -765,7 +786,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var appId = $"revoke-app-{Guid.NewGuid()}";
         foreach (var _ in Enumerable.Range(0, 5))
         {
@@ -789,11 +810,12 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var authId = $"revoke-auth-{Guid.NewGuid()}";
         foreach (var _ in Enumerable.Range(0, 5))
         {
-            await tokenStore.CreateAsync(new OpenIddictRavenDBToken { AuthorizationId = authId }, CancellationToken.None);
+            await tokenStore.CreateAsync(new OpenIddictRavenDBToken { AuthorizationId = authId },
+                CancellationToken.None);
         }
 
         // Act
@@ -813,7 +835,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var subject = $"revoke-subject-{Guid.NewGuid()}";
         foreach (var _ in Enumerable.Range(0, 5))
         {
@@ -837,7 +859,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = Guid.NewGuid().ToString();
 
@@ -854,7 +876,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = Guid.NewGuid().ToString();
 
@@ -871,7 +893,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = DateTimeOffset.UtcNow;
 
@@ -888,7 +910,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = DateTimeOffset.UtcNow.AddHours(1);
 
@@ -905,7 +927,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = Guid.NewGuid().ToString();
 
@@ -922,11 +944,12 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
 
         // Act
-        await tokenStore.SetPropertiesAsync(token, ImmutableDictionary<string, JsonElement>.Empty, CancellationToken.None);
+        await tokenStore.SetPropertiesAsync(token, ImmutableDictionary<string, JsonElement>.Empty,
+            CancellationToken.None);
 
         // Assert
         Assert.Empty(token.Properties);
@@ -938,7 +961,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var properties = new Dictionary<string, JsonElement>
         {
@@ -960,7 +983,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = DateTimeOffset.UtcNow;
 
@@ -977,7 +1000,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = Guid.NewGuid().ToString();
 
@@ -994,7 +1017,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
 
         // Act
@@ -1010,7 +1033,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
         var value = Guid.NewGuid().ToString();
 
@@ -1027,7 +1050,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken();
 
         // Act
@@ -1043,7 +1066,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1056,7 +1079,7 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var tokenStore = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session);
+        var tokenStore = CreateStore(session);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
         await tokenStore.CreateAsync(token, CancellationToken.None);
 
@@ -1076,13 +1099,13 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session1 = store.OpenAsyncSession();
-        var tokenStore1 = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session1);
+        var tokenStore1 = CreateStore(session1);
         var token = new OpenIddictRavenDBToken { Subject = Guid.NewGuid().ToString() };
         await tokenStore1.CreateAsync(token, CancellationToken.None);
         var tokenId = token.Id!;
 
         using var session2 = store.OpenAsyncSession();
-        var tokenStore2 = new OpenIddictRavenDBTokenStore<OpenIddictRavenDBToken>(session2);
+        var tokenStore2 = CreateStore(session2);
         var token2 = await tokenStore2.FindByIdAsync(tokenId, CancellationToken.None);
         token2!.Subject = "session2-update";
         await tokenStore2.UpdateAsync(token2, CancellationToken.None);
@@ -1092,4 +1115,14 @@ public class OpenIddictRavenDBTokenStoreTests : RavenBaseTest
         await Assert.ThrowsAsync<Raven.Client.Exceptions.ConcurrencyException>(async () =>
             await tokenStore1.UpdateAsync(token, CancellationToken.None));
     }
+}
+
+public class OpenIddictRavenDBTokenStoreTests_StaticIndexes : OpenIddictRavenDBTokenStoreTests
+{
+    protected override bool UseStaticIndexes => true;
+}
+
+public class OpenIddictRavenDBTokenStoreTests_DynamicIndexes : OpenIddictRavenDBTokenStoreTests
+{
+    protected override bool UseStaticIndexes => false;
 }

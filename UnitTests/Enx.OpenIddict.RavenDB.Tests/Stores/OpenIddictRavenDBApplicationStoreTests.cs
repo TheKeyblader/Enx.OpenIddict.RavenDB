@@ -3,18 +3,25 @@ using Microsoft.IdentityModel.Tokens;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
+using Raven.Client.Documents.Session;
 
 namespace Enx.OpenIddict.RavenDB.Tests;
 
-public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
+public abstract class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
 {
+    protected abstract bool UseStaticIndexes { get; }
+
+    protected OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>
+        CreateStore(IAsyncDocumentSession session) =>
+        new(session, CreateOptions(UseStaticIndexes));
+
     [Fact]
     public async Task Should_IncreaseCount_When_CountingApplicationsAfterCreatingOne()
     {
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -36,7 +43,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var displayName = Guid.NewGuid().ToString();
         var application = new OpenIddictRavenDBApplication { DisplayName = displayName };
         await applicationStore.CreateAsync(application, CancellationToken.None);
@@ -57,7 +64,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -71,7 +78,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -93,7 +100,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -107,7 +114,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -128,7 +135,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -142,7 +149,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act
         var application = await applicationStore.FindByIdAsync("doesnt-exist", CancellationToken.None);
@@ -157,7 +164,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -178,7 +185,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -192,7 +199,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act
         var application = await applicationStore.FindByClientIdAsync("doesnt-exist", CancellationToken.None);
@@ -207,7 +214,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -229,7 +236,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
@@ -243,7 +250,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act
         var applications = applicationStore.FindByRedirectUriAsync("doesnt-exist", CancellationToken.None);
@@ -254,6 +261,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(application);
         }
+
         Assert.Empty(matchedApplications);
     }
 
@@ -263,7 +271,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var redirectUri = $"http://test.com/test/redirect/{Guid.NewGuid()}";
         var application = new OpenIddictRavenDBApplication
         {
@@ -281,6 +289,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(matchedApplication);
         }
+
         Assert.NotEmpty(matchedApplications);
         Assert.Single(matchedApplications);
         Assert.Equal(matchedApplications[0].Id, application.Id);
@@ -292,7 +301,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var redirectUri = $"http://test.com/test/redirect/{Guid.NewGuid()}";
         var application = new OpenIddictRavenDBApplication
         {
@@ -315,6 +324,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(matchedApplication);
         }
+
         Assert.NotEmpty(matchedApplications);
         Assert.Single(matchedApplications);
         Assert.Equal(matchedApplications[0].Id, application.Id);
@@ -326,7 +336,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(() =>
@@ -335,12 +345,13 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
     }
 
     [Fact]
-    public async Task Should_NotThrowException_When_TryingToFindApplicationByPostLogoutRedirectUriWithAddressThatDoesntExist()
+    public async Task
+        Should_NotThrowException_When_TryingToFindApplicationByPostLogoutRedirectUriWithAddressThatDoesntExist()
     {
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act
         var applications = applicationStore.FindByPostLogoutRedirectUriAsync("doesnt-exist", CancellationToken.None);
@@ -351,6 +362,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(application);
         }
+
         Assert.Empty(matchedApplications);
     }
 
@@ -360,7 +372,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var redirectUri = $"http://test.com/test/redirect/{Guid.NewGuid()}";
         var application = new OpenIddictRavenDBApplication
         {
@@ -378,18 +390,20 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(matchedApplication);
         }
+
         Assert.NotEmpty(matchedApplications);
         Assert.Single(matchedApplications);
         Assert.Equal(matchedApplications[0].Id, application.Id);
     }
 
     [Fact]
-    public async Task Should_ReturnApplication_When_TryingToFindApplicationByPostLogoutRedirectUriByExistingAddressAmongOthers()
+    public async Task
+        Should_ReturnApplication_When_TryingToFindApplicationByPostLogoutRedirectUriByExistingAddressAmongOthers()
     {
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var redirectUri = $"http://test.com/test/postlogout/{Guid.NewGuid()}";
         var application = new OpenIddictRavenDBApplication
         {
@@ -412,6 +426,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(matchedApplication);
         }
+
         Assert.NotEmpty(matchedApplications);
         Assert.Single(matchedApplications);
         Assert.Equal(matchedApplications[0].Id, application.Id);
@@ -423,7 +438,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -438,12 +453,12 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         using var store = GetDocumentStore();
 
         using var session1 = store.OpenAsyncSession();
-        var applicationStore1 = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session1);
+        var applicationStore1 = CreateStore(session1);
         var application = new OpenIddictRavenDBApplication();
         await applicationStore1.CreateAsync(application, CancellationToken.None);
 
         using var session2 = store.OpenAsyncSession();
-        var applicationStore2 = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session2);
+        var applicationStore2 = CreateStore(session2);
         var appInSession2 = await applicationStore2.FindByIdAsync(application.Id!, CancellationToken.None);
         appInSession2!.DisplayName = "Modified by session 2";
         await applicationStore2.UpdateAsync(appInSession2, CancellationToken.None);
@@ -460,7 +475,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
         await applicationStore.CreateAsync(application, CancellationToken.None);
 
@@ -480,7 +495,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             RedirectUris = ["http://test.com/return"],
@@ -507,7 +522,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -532,7 +547,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -546,7 +561,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientId = Guid.NewGuid().ToString(),
@@ -566,7 +581,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -580,7 +595,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ClientSecret = Guid.NewGuid().ToString(),
@@ -600,7 +615,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -614,7 +629,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             Type = Guid.NewGuid().ToString(),
@@ -634,7 +649,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -648,7 +663,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ConsentType = Guid.NewGuid().ToString(),
@@ -668,7 +683,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -682,7 +697,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             DisplayName = Guid.NewGuid().ToString(),
@@ -702,7 +717,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -716,7 +731,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
         await applicationStore.CreateAsync(application, CancellationToken.None);
 
@@ -734,7 +749,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -748,7 +763,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -765,7 +780,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -779,7 +794,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -796,7 +811,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -810,7 +825,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -827,7 +842,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -841,7 +856,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -858,7 +873,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -872,7 +887,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -889,7 +904,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -903,7 +918,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -919,7 +934,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             Permissions = ["Get", "Set", "And Other Things"],
@@ -938,7 +953,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -952,11 +967,12 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
-        var postLogoutRedirectUris = await applicationStore.GetPostLogoutRedirectUrisAsync(application, CancellationToken.None);
+        var postLogoutRedirectUris =
+            await applicationStore.GetPostLogoutRedirectUrisAsync(application, CancellationToken.None);
 
         // Assert
         Assert.Empty(postLogoutRedirectUris);
@@ -968,7 +984,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             PostLogoutRedirectUris =
@@ -980,7 +996,8 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         };
 
         // Act
-        var postLogoutRedirectUris = await applicationStore.GetPostLogoutRedirectUrisAsync(application, CancellationToken.None);
+        var postLogoutRedirectUris =
+            await applicationStore.GetPostLogoutRedirectUrisAsync(application, CancellationToken.None);
 
         // Assert
         Assert.Equal(3, postLogoutRedirectUris.Length);
@@ -992,7 +1009,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1006,7 +1023,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1022,7 +1039,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             RedirectUris =
@@ -1046,7 +1063,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1060,7 +1077,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1076,7 +1093,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             Requirements = ["Do", "Dont", "Doer"],
@@ -1095,7 +1112,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1109,7 +1126,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1125,7 +1142,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             DisplayNames = new Dictionary<CultureInfo, string>
@@ -1149,7 +1166,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1163,7 +1180,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1182,7 +1199,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1208,7 +1225,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1222,7 +1239,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1238,7 +1255,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1259,7 +1276,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1273,7 +1290,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1289,7 +1306,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1315,7 +1332,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1329,7 +1346,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1345,7 +1362,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1371,7 +1388,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1385,7 +1402,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1401,7 +1418,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1422,7 +1439,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1436,7 +1453,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1455,7 +1472,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1481,7 +1498,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1495,7 +1512,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1511,7 +1528,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             Properties = new Dictionary<string, object>
@@ -1536,7 +1553,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act
         var application = await applicationStore.InstantiateAsync(CancellationToken.None);
@@ -1551,7 +1568,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var clientId = Guid.NewGuid().ToString();
         var application = new OpenIddictRavenDBApplication { ClientId = clientId };
         await applicationStore.CreateAsync(application, CancellationToken.None);
@@ -1569,6 +1586,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(app);
         }
+
         Assert.Single(matchedApplications);
         Assert.Equal(clientId, matchedApplications[0].ClientId);
     }
@@ -1579,7 +1597,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         var applicationCount = 10;
         var applicationIds = new List<string>();
@@ -1589,6 +1607,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
             await applicationStore.CreateAsync(application, CancellationToken.None);
             applicationIds.Add(application.Id!);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1600,6 +1619,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(application);
         }
+
         Assert.Equal(applicationCount, matchedApplications.Count);
         Assert.False(applicationIds.Except(matchedApplications.Select(x => x.Id!)).Any());
     }
@@ -1610,7 +1630,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
@@ -1618,6 +1638,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
                 new OpenIddictRavenDBApplication { DisplayName = index.ToString() },
                 CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -1630,6 +1651,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         {
             matchedApplications.Add(application);
         }
+
         Assert.Equal(expectedCount, matchedApplications.Count);
     }
 
@@ -1639,7 +1661,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
@@ -1647,6 +1669,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
                 new OpenIddictRavenDBApplication { DisplayName = index.ToString() },
                 CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         var pageSize = 5;
@@ -1677,7 +1700,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1691,7 +1714,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             ApplicationType = OpenIddictConstants.ApplicationTypes.Web,
@@ -1711,7 +1734,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1725,7 +1748,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1742,7 +1765,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1756,10 +1779,11 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
-            JsonWebKeySet = "{\"e\":\"AQAB\",\"n\":\"nZD7QWmIwj-3N_RZ1qJjX6CdibU87y2l02yMay4KunambalP9g0fU9yZLwLX9WYJINcXZDUf6QeZ-SSbblET-h8Q4OvfSQ7iuu0WqcvBGy8M0qoZ7I-NiChw8dyybMJHgpiP_AyxpCQnp3bQ6829kb3fopbb4cAkOilwVRBYPhRLboXma0cwcllJHPLvMp1oGa7Ad8osmmJhXhM9qdFFASg_OCQdPnYVzp8gOFeOGwlXfSFEgt5vgeU25E-ycUOREcnP7BnMUk7wpwYqlE537LWGOV5z_1Dqcqc9LmN-z4HmNV7b23QZW4_mzKIOY4IqjmnUGgLU9ycFj5YGDCts7Q\",\"alg\":\"RS256\",\"kid\":\"8f796169-0ac4-48a3-a202-fa4f3d814fcd\",\"kty\":\"RSA\",\"use\":\"sig\"}",
+            JsonWebKeySet =
+                "{\"e\":\"AQAB\",\"n\":\"nZD7QWmIwj-3N_RZ1qJjX6CdibU87y2l02yMay4KunambalP9g0fU9yZLwLX9WYJINcXZDUf6QeZ-SSbblET-h8Q4OvfSQ7iuu0WqcvBGy8M0qoZ7I-NiChw8dyybMJHgpiP_AyxpCQnp3bQ6829kb3fopbb4cAkOilwVRBYPhRLboXma0cwcllJHPLvMp1oGa7Ad8osmmJhXhM9qdFFASg_OCQdPnYVzp8gOFeOGwlXfSFEgt5vgeU25E-ycUOREcnP7BnMUk7wpwYqlE537LWGOV5z_1Dqcqc9LmN-z4HmNV7b23QZW4_mzKIOY4IqjmnUGgLU9ycFj5YGDCts7Q\",\"alg\":\"RS256\",\"kid\":\"8f796169-0ac4-48a3-a202-fa4f3d814fcd\",\"kty\":\"RSA\",\"use\":\"sig\"}",
         };
 
         // Act
@@ -1775,7 +1799,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1791,7 +1815,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1805,11 +1829,12 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
-        var jsonWebKeySet = JsonWebKeySet.Create("{\"e\":\"AQAB\",\"n\":\"nZD7QWmIwj-3N_RZ1qJjX6CdibU87y2l02yMay4KunambalP9g0fU9yZLwLX9WYJINcXZDUf6QeZ-SSbblET-h8Q4OvfSQ7iuu0WqcvBGy8M0qoZ7I-NiChw8dyybMJHgpiP_AyxpCQnp3bQ6829kb3fopbb4cAkOilwVRBYPhRLboXma0cwcllJHPLvMp1oGa7Ad8osmmJhXhM9qdFFASg_OCQdPnYVzp8gOFeOGwlXfSFEgt5vgeU25E-ycUOREcnP7BnMUk7wpwYqlE537LWGOV5z_1Dqcqc9LmN-z4HmNV7b23QZW4_mzKIOY4IqjmnUGgLU9ycFj5YGDCts7Q\",\"alg\":\"RS256\",\"kid\":\"8f796169-0ac4-48a3-a202-fa4f3d814fcd\",\"kty\":\"RSA\",\"use\":\"sig\"}");
+        var jsonWebKeySet = JsonWebKeySet.Create(
+            "{\"e\":\"AQAB\",\"n\":\"nZD7QWmIwj-3N_RZ1qJjX6CdibU87y2l02yMay4KunambalP9g0fU9yZLwLX9WYJINcXZDUf6QeZ-SSbblET-h8Q4OvfSQ7iuu0WqcvBGy8M0qoZ7I-NiChw8dyybMJHgpiP_AyxpCQnp3bQ6829kb3fopbb4cAkOilwVRBYPhRLboXma0cwcllJHPLvMp1oGa7Ad8osmmJhXhM9qdFFASg_OCQdPnYVzp8gOFeOGwlXfSFEgt5vgeU25E-ycUOREcnP7BnMUk7wpwYqlE537LWGOV5z_1Dqcqc9LmN-z4HmNV7b23QZW4_mzKIOY4IqjmnUGgLU9ycFj5YGDCts7Q\",\"alg\":\"RS256\",\"kid\":\"8f796169-0ac4-48a3-a202-fa4f3d814fcd\",\"kty\":\"RSA\",\"use\":\"sig\"}");
         await applicationStore.SetJsonWebKeySetAsync(application, jsonWebKeySet, CancellationToken.None);
 
         // Assert
@@ -1822,7 +1847,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1836,7 +1861,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1852,7 +1877,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication
         {
             Settings = new Dictionary<string, string>
@@ -1876,7 +1901,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -1890,7 +1915,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1909,7 +1934,7 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var applicationStore = new OpenIddictRavenDBApplicationStore<OpenIddictRavenDBApplication>(session);
+        var applicationStore = CreateStore(session);
         var application = new OpenIddictRavenDBApplication();
 
         // Act
@@ -1928,4 +1953,14 @@ public class OpenIddictRavenDBApplicationStoreTests : RavenBaseTest
         Assert.NotNull(application.Settings);
         Assert.Equal(3, application.Settings!.Count);
     }
+}
+
+public class OpenIddictRavenDBApplicationStoreTests_StaticIndexes : OpenIddictRavenDBApplicationStoreTests
+{
+    protected override bool UseStaticIndexes => true;
+}
+
+public class OpenIddictRavenDBApplicationStoreTests_DynamicIndexes : OpenIddictRavenDBApplicationStoreTests
+{
+    protected override bool UseStaticIndexes => false;
 }

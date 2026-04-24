@@ -2,18 +2,24 @@ using Enx.OpenIddict.RavenDB.Models;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
+using Raven.Client.Documents.Session;
 
 namespace Enx.OpenIddict.RavenDB.Tests;
 
-public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
+public abstract class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
 {
+    protected abstract bool UseStaticIndexes { get; }
+
+    protected OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope> CreateStore(IAsyncDocumentSession session) =>
+        new(session, CreateOptions(UseStaticIndexes));
+
     [Fact]
     public async Task Should_IncreaseCount_When_CountingScopesAfterCreatingOne()
     {
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
         var beforeCount = await scopeStore.CountAsync(CancellationToken.None);
         await scopeStore.CreateAsync(scope, CancellationToken.None);
@@ -32,7 +38,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var name = Guid.NewGuid().ToString();
         await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = name }, CancellationToken.None);
         WaitForIndexing(store);
@@ -52,7 +58,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { DisplayName = Guid.NewGuid().ToString() };
 
         // Act
@@ -71,7 +77,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
         await scopeStore.CreateAsync(scope, CancellationToken.None);
 
@@ -89,7 +95,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         // Act
         var scope = await scopeStore.FindByIdAsync("doesnt-exist", CancellationToken.None);
@@ -104,7 +110,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
         await scopeStore.CreateAsync(scope, CancellationToken.None);
 
@@ -122,7 +128,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var name = $"scope-{Guid.NewGuid()}";
         await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = name }, CancellationToken.None);
         WaitForIndexing(store);
@@ -141,7 +147,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         WaitForIndexing(store);
 
         // Act
@@ -157,7 +163,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         // Act & Assert
         Assert.Throws<ArgumentException>(() =>
@@ -170,13 +176,14 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var suffix = Guid.NewGuid().ToString();
         var names = Enumerable.Range(0, 5).Select(i => $"scope-{i}-{suffix}").ToImmutableArray();
         foreach (var name in names)
         {
             await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = name }, CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -195,7 +202,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         WaitForIndexing(store);
 
         // Act
@@ -214,7 +221,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var resource = $"resource-{Guid.NewGuid()}";
         await scopeStore.CreateAsync(new OpenIddictRavenDBScope
         {
@@ -240,7 +247,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var name = Guid.NewGuid().ToString();
         await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = name }, CancellationToken.None);
         WaitForIndexing(store);
@@ -262,7 +269,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Description = Guid.NewGuid().ToString() };
 
         // Act
@@ -278,7 +285,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
@@ -294,7 +301,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope
         {
             Descriptions = new Dictionary<CultureInfo, string>
@@ -318,7 +325,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { DisplayName = Guid.NewGuid().ToString() };
 
         // Act
@@ -334,7 +341,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
@@ -350,7 +357,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope
         {
             DisplayNames = new Dictionary<CultureInfo, string>
@@ -374,7 +381,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
         await scopeStore.CreateAsync(scope, CancellationToken.None);
 
@@ -392,7 +399,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
 
         // Act
@@ -408,7 +415,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
@@ -424,7 +431,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         scope.Properties["Test"] = true;
         scope.Properties["Testing"] = "value";
@@ -443,7 +450,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
@@ -459,7 +466,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope
         {
             Resources = ["Thing", "Other-Thing", "More-Things"],
@@ -478,7 +485,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         // Act
         var scope = await scopeStore.InstantiateAsync(CancellationToken.None);
@@ -493,7 +500,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         var scopeCount = 10;
         var scopeIds = new List<string>();
@@ -503,6 +510,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
             await scopeStore.CreateAsync(scope, CancellationToken.None);
             scopeIds.Add(scope.Id!);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -522,12 +530,14 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
-            await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = $"scope-{index}" }, CancellationToken.None);
+            await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = $"scope-{index}" },
+                CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -547,12 +557,14 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         foreach (var index in Enumerable.Range(0, 10))
         {
-            await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = $"scope-{index}" }, CancellationToken.None);
+            await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = $"scope-{index}" },
+                CancellationToken.None);
         }
+
         WaitForIndexing(store);
 
         // Act
@@ -578,7 +590,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var name = Guid.NewGuid().ToString();
         await scopeStore.CreateAsync(new OpenIddictRavenDBScope { Name = name }, CancellationToken.None);
         WaitForIndexing(store);
@@ -602,7 +614,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         var description = Guid.NewGuid().ToString();
 
@@ -619,11 +631,12 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
-        await scopeStore.SetDescriptionsAsync(scope, ImmutableDictionary<CultureInfo, string>.Empty, CancellationToken.None);
+        await scopeStore.SetDescriptionsAsync(scope, ImmutableDictionary<CultureInfo, string>.Empty,
+            CancellationToken.None);
 
         // Assert
         Assert.Empty(scope.Descriptions);
@@ -635,7 +648,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         var descriptions = new Dictionary<CultureInfo, string>
         {
@@ -657,7 +670,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         var displayName = Guid.NewGuid().ToString();
 
@@ -674,11 +687,12 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
-        await scopeStore.SetDisplayNamesAsync(scope, ImmutableDictionary<CultureInfo, string>.Empty, CancellationToken.None);
+        await scopeStore.SetDisplayNamesAsync(scope, ImmutableDictionary<CultureInfo, string>.Empty,
+            CancellationToken.None);
 
         // Assert
         Assert.Empty(scope.DisplayNames);
@@ -690,7 +704,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         var displayNames = new Dictionary<CultureInfo, string>
         {
@@ -712,7 +726,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         var name = Guid.NewGuid().ToString();
 
@@ -729,11 +743,12 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
-        await scopeStore.SetPropertiesAsync(scope, ImmutableDictionary<string, JsonElement>.Empty, CancellationToken.None);
+        await scopeStore.SetPropertiesAsync(scope, ImmutableDictionary<string, JsonElement>.Empty,
+            CancellationToken.None);
 
         // Assert
         Assert.Empty(scope.Properties);
@@ -745,7 +760,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
         var properties = new Dictionary<string, JsonElement>
         {
@@ -767,7 +782,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
@@ -783,11 +798,12 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope();
 
         // Act
-        await scopeStore.SetResourcesAsync(scope, ImmutableArray.Create("Testar", "Testado", "Testing"), CancellationToken.None);
+        await scopeStore.SetResourcesAsync(scope, ImmutableArray.Create("Testar", "Testado", "Testing"),
+            CancellationToken.None);
 
         // Assert
         Assert.Equal(3, scope.Resources.Count);
@@ -799,7 +815,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () =>
@@ -812,7 +828,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
         await scopeStore.CreateAsync(scope, CancellationToken.None);
 
@@ -832,7 +848,7 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session = store.OpenAsyncSession();
-        var scopeStore = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session);
+        var scopeStore = CreateStore(session);
         var scope = new OpenIddictRavenDBScope
         {
             Resources = ["some-resource"],
@@ -855,13 +871,13 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         // Arrange
         using var store = GetDocumentStore();
         using var session1 = store.OpenAsyncSession();
-        var scopeStore1 = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session1);
+        var scopeStore1 = CreateStore(session1);
         var scope = new OpenIddictRavenDBScope { Name = Guid.NewGuid().ToString() };
         await scopeStore1.CreateAsync(scope, CancellationToken.None);
         var scopeId = scope.Id!;
 
         using var session2 = store.OpenAsyncSession();
-        var scopeStore2 = new OpenIddictRavenDBScopeStore<OpenIddictRavenDBScope>(session2);
+        var scopeStore2 = CreateStore(session2);
         var scope2 = await scopeStore2.FindByIdAsync(scopeId, CancellationToken.None);
         scope2!.Name = "session2-update";
         await scopeStore2.UpdateAsync(scope2, CancellationToken.None);
@@ -871,4 +887,14 @@ public class OpenIddictRavenDBScopeStoreTests : RavenBaseTest
         await Assert.ThrowsAsync<Raven.Client.Exceptions.ConcurrencyException>(async () =>
             await scopeStore1.UpdateAsync(scope, CancellationToken.None));
     }
+}
+
+public class OpenIddictRavenDBScopeStoreTests_StaticIndexes : OpenIddictRavenDBScopeStoreTests
+{
+    protected override bool UseStaticIndexes => true;
+}
+
+public class OpenIddictRavenDBScopeStoreTests_DynamicIndexes : OpenIddictRavenDBScopeStoreTests
+{
+    protected override bool UseStaticIndexes => false;
 }

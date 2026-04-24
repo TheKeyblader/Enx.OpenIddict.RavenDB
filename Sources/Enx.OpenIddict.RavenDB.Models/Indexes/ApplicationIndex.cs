@@ -4,30 +4,34 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Enx.OpenIddict.RavenDB.Indexes
+namespace Enx.OpenIddict.RavenDB.Indexes;
+
+public class
+    ApplicationIndex<TApplication> : AbstractIndexCreationTask<TApplication, ApplicationIndex<TApplication>.Result>
+    where TApplication : OpenIddictRavenDBApplication
 {
-    public class ApplicationIndex : AbstractIndexCreationTask<OpenIddictRavenDBApplication, ApplicationIndex.Result>
+    public class Result
     {
-        public class Result
-        {
-            public string? ClientId { get; set; }
+        public string? ClientId { get; set; }
 
-            public virtual IReadOnlyList<string> PostLogoutRedirectUris { get; set; }
-                = ImmutableList.Create<string>();
+        public IReadOnlyList<string> PostLogoutRedirectUris { get; set; }
+            = ImmutableList.Create<string>();
 
-            public virtual IReadOnlyList<string> RedirectUris { get; set; }
-                = ImmutableList.Create<string>();
-        }
-
-        public ApplicationIndex()
-        {
-            Map = applications => from application in applications
-                                  select new Result
-                                  {
-                                      ClientId = application.ClientId,
-                                      PostLogoutRedirectUris = application.PostLogoutRedirectUris,
-                                      RedirectUris = application.RedirectUris
-                                  };
-        }
+        public IReadOnlyList<string> RedirectUris { get; set; }
+            = ImmutableList.Create<string>();
     }
+
+    public ApplicationIndex()
+    {
+        Map = applications => from application in applications
+            select new Result
+            {
+                ClientId = application.ClientId,
+                PostLogoutRedirectUris = application.PostLogoutRedirectUris,
+                RedirectUris = application.RedirectUris
+            };
+    }
+
+    ///<inheritdoc/>
+    public override string IndexName => "OpenIddictApplicationIndex";
 }
