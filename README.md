@@ -135,6 +135,12 @@ The same pattern applies to `ReplaceDefaultAuthorizationEntity<T>`, `ReplaceDefa
 | `OpenIddictRavenDBScope` | Name, DisplayName, DisplayNames, Description, Descriptions, Properties, Resources |
 | `OpenIddictRavenDBToken` | ApplicationId, AuthorizationId, CreationDate, ExpirationDate, Payload, Properties, RedemptionDate, ReferenceId, Status, Subject, Type |
 
+## Roadmap
+
+The library is currently in pre-release. Version **1.0** will be published once end-to-end scenario tests (authorization code flow, client credentials, token introspection, etc.) are in place and passing.
+
+Contributions to the test suite are especially welcome.
+
 ## Contributing
 
 Contributions are welcome. Please open an issue before submitting a pull request for significant changes.
