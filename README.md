@@ -73,14 +73,33 @@ builder.Services.AddOpenIddict()
     });
 ```
 
-### 3. Deploy RavenDB indexes
+### 3. (Optional) Use static indexes
 
-The library ships with custom RavenDB indexes for efficient querying. Deploy them once at startup:
+By default the stores rely on RavenDB auto-indexes. If you prefer pre-defined static indexes for better performance in production, enable the option and deploy the bundled indexes once at startup:
+
+```csharp
+builder.Services.AddOpenIddict()
+    .AddCore(options =>
+    {
+        options.UseRavenDB(ravendb =>
+        {
+            ravendb.Configure(o => o.UseStaticIndexes = true);
+        });
+    });
+```
 
 ```csharp
 var store = app.Services.GetRequiredService<IDocumentStore>();
-await IndexCreation.CreateIndexesAsync(
-    typeof(OpenIddictRavenDBApplication).Assembly, store);
+await new ApplicationIndex<OpenIddictRavenDBApplication>().ExecuteAsync(store);
+await new AuthorizationIndex<OpenIddictRavenDBAuthorization>().ExecuteAsync(store);
+await new ScopeIndex<OpenIddictRavenDBScope>().ExecuteAsync(store);
+await new TokenIndex<OpenIddictRavenDBToken>().ExecuteAsync(store);
+```
+
+If you are using custom entities, pass your types instead:
+
+```csharp
+await new ApplicationIndex<MyApplication>().ExecuteAsync(store);
 ```
 
 ## Custom entities
@@ -111,10 +130,10 @@ The same pattern applies to `ReplaceDefaultAuthorizationEntity<T>`, `ReplaceDefa
 
 | Model | Key properties |
 |---|---|
-| `OpenIddictRavenDBApplication` | ClientId, ClientSecret, DisplayName, RedirectUris, Permissions, Requirements |
-| `OpenIddictRavenDBAuthorization` | ApplicationId, Subject, Status, Scopes, CreationDate |
-| `OpenIddictRavenDBScope` | Name, DisplayName, Description, Resources |
-| `OpenIddictRavenDBToken` | ApplicationId, AuthorizationId, Subject, Type, Status, ExpirationDate, Payload |
+| `OpenIddictRavenDBApplication` | ApplicationType, ClientId, ClientSecret, ConsentType, DisplayName, DisplayNames, JsonWebKeySet, Permissions, PostLogoutRedirectUris, Properties, RedirectUris, Requirements, Settings, Type |
+| `OpenIddictRavenDBAuthorization` | ApplicationId, CreationDate, Properties, Scopes, Tokens, Status, Subject, Type |
+| `OpenIddictRavenDBScope` | Name, DisplayName, DisplayNames, Description, Descriptions, Properties, Resources |
+| `OpenIddictRavenDBToken` | ApplicationId, AuthorizationId, CreationDate, ExpirationDate, Payload, Properties, RedemptionDate, ReferenceId, Status, Subject, Type |
 
 ## Contributing
 
