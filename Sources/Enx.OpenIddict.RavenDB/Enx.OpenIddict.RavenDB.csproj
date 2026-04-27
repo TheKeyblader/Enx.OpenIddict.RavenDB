@@ -13,8 +13,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="OpenIddict.Core" Version="7.4.0" />
-    <PackageReference Include="RavenDB.Client" Version="7.2.1" />
+    <PackageReference Include="OpenIddict.Core" Version="[7.0.0,8.0.0)"/>
+    <PackageReference Include="RavenDB.Client" Version="[7.0.0,8.0.0)"/>
   </ItemGroup>
 
   <ItemGroup>

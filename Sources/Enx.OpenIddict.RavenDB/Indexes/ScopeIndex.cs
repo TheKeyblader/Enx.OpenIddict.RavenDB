@@ -1,22 +1,14 @@
-﻿using Enx.OpenIddict.RavenDB.Models;
-using Raven.Client.Documents.Indexes;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using Enx.OpenIddict.RavenDB.Models;
+using Raven.Client.Documents.Indexes;
 
 namespace Enx.OpenIddict.RavenDB.Indexes;
 
 public class ScopeIndex<TScope> : AbstractIndexCreationTask<TScope, ScopeIndex<TScope>.Result>
     where TScope : OpenIddictRavenDBScope
 {
-    public class Result
-    {
-        public string? Name { get; set; }
-
-        public IReadOnlyList<string> Resources { get; set; }
-            = ImmutableList.Create<string>();
-    }
-
     public ScopeIndex()
     {
         Map = scopes => from scope in scopes
@@ -29,4 +21,12 @@ public class ScopeIndex<TScope> : AbstractIndexCreationTask<TScope, ScopeIndex<T
 
     ///<inheritdoc/>
     public override string IndexName => "OpenIddictScopeIndex";
+
+    public class Result
+    {
+        public string? Name { get; set; }
+
+        public IReadOnlyList<string> Resources { get; set; }
+            = ImmutableList.Create<string>();
+    }
 }
