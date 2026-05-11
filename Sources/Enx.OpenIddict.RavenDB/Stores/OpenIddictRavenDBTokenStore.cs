@@ -332,11 +332,11 @@ public class OpenIddictRavenDBTokenStore<TToken>(
         if (!string.IsNullOrEmpty(type))
             query = query.Where(a => a.Type == type);
 
-        var authorizations = await query.ToArrayAsync(cancellationToken);
-        foreach (var auth in authorizations)
+        var tokens = await query.ToArrayAsync(cancellationToken);
+        foreach (var auth in tokens)
             auth.Status = Statuses.Revoked;
         await Session.SaveChangesAsync(cancellationToken);
-        return authorizations.Length;
+        return tokens.Length;
     }
 
     public async ValueTask<long> RevokeByApplicationIdAsync(string identifier,
@@ -347,11 +347,11 @@ public class OpenIddictRavenDBTokenStore<TToken>(
         var query = Session.Query<TToken>()
             .Where(x => x.ApplicationId == identifier);
 
-        var authorizations = await query.ToArrayAsync(cancellationToken);
-        foreach (var auth in authorizations)
+        var tokens = await query.ToArrayAsync(cancellationToken);
+        foreach (var auth in tokens)
             auth.Status = Statuses.Revoked;
         await Session.SaveChangesAsync(cancellationToken);
-        return authorizations.Length;
+        return tokens.Length;
     }
 
     public async ValueTask<long> RevokeByAuthorizationIdAsync(string identifier, CancellationToken cancellationToken)
@@ -361,11 +361,11 @@ public class OpenIddictRavenDBTokenStore<TToken>(
         var query = Session.Query<TToken>()
             .Where(x => x.AuthorizationId == identifier);
 
-        var authorizations = await query.ToArrayAsync(cancellationToken);
-        foreach (var auth in authorizations)
+        var tokens = await query.ToArrayAsync(cancellationToken);
+        foreach (var auth in tokens)
             auth.Status = Statuses.Revoked;
         await Session.SaveChangesAsync(cancellationToken);
-        return authorizations.Length;
+        return tokens.Length;
     }
 
     public async ValueTask<long> RevokeBySubjectAsync(string subject, CancellationToken cancellationToken = default)
@@ -375,11 +375,11 @@ public class OpenIddictRavenDBTokenStore<TToken>(
         var query = Session.Query<TToken>()
             .Where(x => x.Subject == subject);
 
-        var authorizations = await query.ToArrayAsync(cancellationToken);
-        foreach (var auth in authorizations)
+        var tokens = await query.ToArrayAsync(cancellationToken);
+        foreach (var auth in tokens)
             auth.Status = Statuses.Revoked;
         await Session.SaveChangesAsync(cancellationToken);
-        return authorizations.Length;
+        return tokens.Length;
     }
 
     public virtual ValueTask SetApplicationIdAsync(TToken token, string? identifier,

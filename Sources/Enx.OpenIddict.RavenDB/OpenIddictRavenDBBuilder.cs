@@ -9,7 +9,7 @@ using System.ComponentModel;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Exposes the necessary methods required to configure the OpenIddict MongoDB services.
+/// Exposes the necessary methods required to configure the OpenIddict RavenDB services.
 /// </summary>
 public class OpenIddictRavenDBBuilder
 {
@@ -27,7 +27,7 @@ public class OpenIddictRavenDBBuilder
     public IServiceCollection Services { get; }
 
     /// <summary>
-    /// Amends the default OpenIddict MongoDB configuration.
+    /// Amends the default OpenIddict RavenDB configuration.
     /// </summary>
     /// <param name="configuration">The delegate used to configure the OpenIddict options.</param>
     /// <remarks>This extension can be safely called multiple times.</remarks>

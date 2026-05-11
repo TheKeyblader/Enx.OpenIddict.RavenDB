@@ -5,13 +5,13 @@ using Enx.OpenIddict.RavenDB.Models;
 namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
-/// Exposes extensions allowing to register the OpenIddict MongoDB services.
+/// Exposes extensions allowing to register the OpenIddict RavenDB services.
 /// </summary>
 public static class OpenIddictRavenDBExtensions
 {
     /// <summary>
-    /// Registers the MongoDB stores services in the DI container and
-    /// configures OpenIddict to use the MongoDB entities by default.
+    /// Registers the RavenDB stores services in the DI container and
+    /// configures OpenIddict to use the RavenDB entities by default.
     /// </summary>
     /// <param name="builder">The services builder used by OpenIddict to register new services.</param>
     /// <remarks>This extension can be safely called multiple times.</remarks>
@@ -44,11 +44,11 @@ public static class OpenIddictRavenDBExtensions
     }
 
     /// <summary>
-    /// Registers the MongoDB stores services in the DI container and
-    /// configures OpenIddict to use the MongoDB entities by default.
+    /// Registers the RavenDB stores services in the DI container and
+    /// configures OpenIddict to use the RavenDB entities by default.
     /// </summary>
     /// <param name="builder">The services builder used by OpenIddict to register new services.</param>
-    /// <param name="configuration">The configuration delegate used to configure the MongoDB services.</param>
+    /// <param name="configuration">The configuration delegate used to configure the RavenDB services.</param>
     /// <remarks>This extension can be safely called multiple times.</remarks>
     /// <returns>The <see cref="OpenIddictCoreBuilder"/>.</returns>
     public static OpenIddictCoreBuilder UseRavenDB(
